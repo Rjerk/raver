@@ -13,10 +13,13 @@ using Callback = std::function<void ()>;
 using MutexGuard = std::lock_guard<std::mutex>;
 
 class Channel {
+    friend class IOManager;
 public:
     void readWhenReady();
-
     void writeWhenReady();
+
+    void readIfWaiting();
+    void writeIfWaiting();
 
     void setReadCallback(const Callback& readcb) { readcb_ = readcb; }
     void setReadCallback(Callback&& readcb) { readcb_ = std::move(readcb); }
@@ -24,7 +27,6 @@ public:
     void setWriteCallback(Callback&& writecb) { writecb_ = std::move(writecb); }
 
     int fd() const { return fd_; }
-
 private:
     // used by IOManager,
     Channel(IOManager* io, int fd,
@@ -41,7 +43,7 @@ private:
     Callback readcb_;
     Callback writecb_;
     std::mutex mtx_;
-    Channel* next;
+    Channel* next_;
 };
 
 }
