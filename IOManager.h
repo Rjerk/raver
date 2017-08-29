@@ -2,10 +2,14 @@
 #define IO_MANAGER_H
 
 #include "ThreadPool.h"
+#include "TimeStamp.h"
+#include <map>
 
 namespace raver {
 
 class Channel;
+class Poller;
+
 using Callback = std::function<void ()>;
 
 class IOManager : noncopyable {
@@ -19,12 +23,27 @@ public:
 
     void stop();
 
-    void addTask(TaskType task);
+    void addTask(const TaskType& task);
+
+    void addTimer(double delay, const TaskType& task);
 
     Channel* newChannel(int listenfd, const Callback& readcb, const Callback& writecb);
+
     void removeChannel(Channel* ch);
 private:
     ThreadPool* pool_;
+    Poller* poller_;
+    Channel* channel_;
+    bool polling_;
+    bool stopped_;
+
+    using TimerQueue = std::multimap<TimeStamp::Ticks, TaskType>;
+    TimerQueue timer_queue_;
+
+    std::mutex mtx_timer_queue_;
+    std::mutex mtx_stop_;
+    std::mutex mtx_channel_;
+    std::condition_variable cv_polling_;
 };
 
 }
