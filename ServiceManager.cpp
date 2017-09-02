@@ -1,5 +1,6 @@
 #include "ServiceManager.h"
 #include "IOManager.h"
+#include "Logger.h"
 
 namespace raver {
 
@@ -7,6 +8,7 @@ ServiceManager::ServiceManager(int num_thread)
     : num_thread_(num_thread), stop_requested_(false), stopped_(false)
 {
     io_ = new IOManager(num_thread_);
+    LOG_INFO << "ServiceManager ctor";
 }
 
 ServiceManager::~ServiceManager()
@@ -19,10 +21,13 @@ ServiceManager::~ServiceManager()
 
 void ServiceManager::run()
 {
+    LOG_INFO << "server running.";
     for (auto ac : acceptors_) {
-        ac->accept();
+        LOG_DEBUG << "ac->startAccept()";
+        ac->startAccept();
     }
 
+    LOG_INFO << "server polling.";
     io_->poll();
 
     {

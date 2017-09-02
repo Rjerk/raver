@@ -1,13 +1,12 @@
 #include "Channel.h"
 #include "IOManager.h"
-
-#include <unistd.h>
-#include <fcntl.h>
+#include "Utils.h"
 
 namespace raver {
 
 void Channel::readWhenReady()
 {
+    LOG_INFO << "readWhenReady";
     bool ready = false;
     {
         MutexGuard guard(mtx_);
@@ -25,6 +24,7 @@ void Channel::readWhenReady()
 
 void Channel::writeWhenReady()
 {
+    LOG_INFO << "writeWhenReady";
     bool ready = false;
     {
         MutexGuard guard(mtx_);
@@ -44,11 +44,10 @@ Channel::Channel(IOManager* io, int fd,
                  const Callback& readcb,
                  const Callback& writecb)
     : fd_(fd), io_(io), closed_fd_(false),
-      readcb_(readcb), writecb_(writecb), mtx_(), next(nullptr),
+      readcb_(readcb), writecb_(writecb), mtx_(), next_(nullptr),
       can_read_(false), can_write_(false), waiting_read_(false), waiting_write_(false)
 {
-    int flags = ::fcntl(fd_, F_GETFL, 0);
-    fcntl(fd_, F_SETFL, flags | O_NONBLOCK);
+    wrapper::setNonBlockAndCloseOnExec(fd_);
 }
 
 Channel::~Channel()
@@ -57,6 +56,7 @@ Channel::~Channel()
 
 void Channel::readIfWaiting()
 {
+    LOG_INFO << "readIfWaiting";
     bool ready = false;
     {
         MutexGuard guard(mtx_);
@@ -74,6 +74,7 @@ void Channel::readIfWaiting()
 
 void Channel::writeIfWaiting()
 {
+    LOG_INFO << "writeIfWaiting";
     bool ready = false;
     {
         MutexGuard guard(mtx_);

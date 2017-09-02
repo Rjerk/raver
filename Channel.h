@@ -44,6 +44,10 @@ private:
     Callback writecb_;
     std::mutex mtx_;
     Channel* next_;
+    bool can_read_;
+    bool can_write_;
+    bool waiting_read_;
+    bool waiting_write_;
 };
 
 }

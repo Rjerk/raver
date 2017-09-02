@@ -3,6 +3,7 @@
 #include "ThreadPool.h"
 #include "TimeStamp.h"
 #include "Channel.h"
+#include "Logger.h"
 
 namespace raver {
 
@@ -14,6 +15,7 @@ IOManager::IOManager(int num_thread)
       stopped_(false)
 {
     poller_->create();
+    LOG_INFO << "IOManager ctor";
 }
 
 IOManager::~IOManager()
@@ -23,6 +25,7 @@ IOManager::~IOManager()
 
 void IOManager::addTask(const TaskType& task)
 {
+    LOG_INFO << "add task to pool.";
     pool_->addTask(task);
 }
 
@@ -36,7 +39,7 @@ void IOManager::poll()
     int res = 0;
     while (!stopped_) {
         // got events.
-        res = poller_->poll(); (void) res;
+        res = poller_->poll();
 
         {
             MutexGuard guard(mtx_timer_queue_);
@@ -57,12 +60,18 @@ void IOManager::poll()
         int event_flags;
         Channel* ch;
         for (int i = 0; i < res; ++i) {
+            LOG_DEBUG << "events num: " << res;
             poller_->getEvent(i, &event_flags, &ch);
-            if (event_flags & (Poller::PollEvent::READ | Poller::PollEvent::ERROR)) {
+            if (event_flags & (Poller::PollEvent::READ)) {
+                LOG_DEBUG << "got readable event";
                 ch->readIfWaiting();
             }
-            if (event_flags & (Poller::PollEvent::WRITE | Poller::PollEvent::ERROR)) {
+            if (event_flags & (Poller::PollEvent::WRITE)) {
+                LOG_DEBUG << "got writable event";
                 ch->writeIfWaiting();
+            }
+            if (event_flags & (Poller::PollEvent::ERROR)) {
+                LOG_DEBUG << "got error event";
             }
         }
 

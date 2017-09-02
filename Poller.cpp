@@ -68,13 +68,18 @@ void Poller::getEvent(int i, int* events, Channel** data)
 {
     *events &= 0x00000000;
     *data = reinterpret_cast<Channel*>(poller_->events_[i].data.ptr);
-    if (poller_->events_[i].events & EPOLLERR) {
+    auto flags = poller_->events_[i].events;
+    if ((flags & EPOLLHUP) && !(flags & EPOLLIN)) {
+        LOG_WARN << "fd: " << poller_->fd_ << " EPOLLHUP";
+    }
+    if (flags & EPOLLERR) {
+        LOG_DEBUG << "EPOLLERR";
         *events |= PollEvent::ERROR;
     }
-    if (poller_->events_[i].events & (EPOLLHUP | EPOLLIN)) {
+    if (flags & (EPOLLPRI | EPOLLIN | EPOLLHUP)) {
         *events |= PollEvent::READ;
     }
-    if (poller_->events_[i].events & (EPOLLHUP | EPOLLOUT)) {
+    if (flags & EPOLLOUT) {
         *events |= PollEvent::WRITE;
     }
 }

@@ -1,8 +1,7 @@
 #include "HTTPService.h"
 #include "ServiceManager.h"
 #include "Logger.h"
-#include "HTTPClientConnection.h"
-#include "HTTPServerConnection.h"
+#include "HTTPConnection.h"
 #include "Notification.h"
 
 namespace raver {
@@ -11,6 +10,7 @@ HTTPService::HTTPService(int port, ServiceManager* sm)
     : manager_(sm)
 {
     manager_->registry(port, std::bind(&HTTPService::accept, this, std::placeholders::_1));
+    LOG_INFO << "HTTPService ctor";
 }
 
 HTTPService::~HTTPService()
@@ -22,14 +22,15 @@ void HTTPService::stop()
     manager_->stop();
 }
 
+/*
 void HTTPService::asyncConnect(const std::string& host, int port, const ConnectCallback& cb)
 {
     if (manager_->isStopped()) {
         return ;
     }
 
-    HTTPClientConnection conn(this);
-    conn.connect(host, port, cb);
+    //HTTPClientConnection conn(this);
+    //conn.connect(host, port, cb);
 
 }
 
@@ -43,19 +44,27 @@ void HTTPService::connect(const std::string& host, int port, HTTPClientConnectio
                              });
     n.wait();
 }
+*/
 
-void HTTPService::accept(int client_fd)
+void HTTPService::accept(int connfd)
 {
     if (manager_->isStopped()) {
         return ;
     }
-    if (client_fd < 0) {
-        LOG_ERROR << "Client fd:" << client_fd;
+    if (connfd < 0) {
+        LOG_ERROR << "Client fd:" << connfd;
         stop();
         return ;
     }
 
-    HTTPServerConnection conn(this, client_fd);
+    HTTPConnection conn(this, connfd); // build a connection and start read.
+}
+
+IOManager* HTTPService::ioManager() const
+{
+    return manager_->ioManager();
 }
 
 }
+
+

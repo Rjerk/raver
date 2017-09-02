@@ -2,6 +2,7 @@
 #define THREAD_POOL_H
 
 #include "noncopyable.h"
+#include "Logger.h"
 
 #include <functional>
 #include <thread>
@@ -37,6 +38,7 @@ public:
 	        tasks_.emplace([task]() { (*task)(); });
 	    }
 	    cv_.notify_one(); // notify a thread to process the task.
+        LOG_INFO << "new task added in threadpool.";
 	}
 
     void stop();

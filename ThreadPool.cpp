@@ -17,6 +17,7 @@ ThreadPool::ThreadPool(size_t num_thread)
     for (size_t i = 0; i < size_; ++i) {
         threads_.emplace_back(&ThreadPool::worker, this);
     }
+    LOG_INFO << "ThreadPool ctor";
 }
 
 ThreadPool::~ThreadPool()

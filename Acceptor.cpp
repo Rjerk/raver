@@ -6,8 +6,8 @@
 
 namespace raver {
 
-Acceptor::Acceptor(IOManager* io, int port, const AcceptorCallback& cb)
-    : listenfd_(-1), io_(io), channel_(nullptr), accept_cb_(cb)
+Acceptor::Acceptor(IOManager* manager, int port, const AcceptorCallback& cb)
+    : listenfd_(-1), manager_(manager), channel_(nullptr), accept_cb_(cb)
 {
     // get and set listenfd.
     listenfd_ = wrapper::socket(AF_INET, SOCK_STREAM, 0);
@@ -21,18 +21,18 @@ Acceptor::Acceptor(IOManager* io, int port, const AcceptorCallback& cb)
     wrapper::bindOrDie(listenfd_, (struct sockaddr*) &servaddr);
     wrapper::listenOrDie(listenfd_);
 
-    channel_ = io_->newChannel(listenfd_, std::bind(&Acceptor::doAccept, this),
+    channel_ = manager_->newChannel(listenfd_, std::bind(&Acceptor::doAccept, this),
                                           std::bind(&Acceptor::doNothing, this));
 }
 
 Acceptor::~Acceptor()
 {
-    if (io_) {
+    if (manager_) {
         close();
     }
 }
 
-void Acceptor::accept()
+void Acceptor::startAccept()
 {
     channel_->readWhenReady();
 }
@@ -41,7 +41,7 @@ void Acceptor::close()
 {
     wrapper::close(listenfd_);
     if (channel_) {
-        io_->removeChannel(channel_);
+        manager_->removeChannel(channel_);
     }
     channel_ = nullptr;
 }
@@ -50,8 +50,8 @@ void Acceptor::doAccept()
 {
     for ( ; ; ) {
         struct sockaddr_in clntaddr;
-        int fd = wrapper::accept(listenfd_, (struct sockaddr_in6 *) &clntaddr);
-        accept_cb_(fd);
+        int connfd = wrapper::accept(listenfd_, (struct sockaddr_in6 *) &clntaddr);
+        accept_cb_(connfd);
     }
 }
 

@@ -23,13 +23,13 @@ void setNonBlockAndCloseOnExec(int sockfd)
     int flags = ::fcntl(sockfd, F_GETFL, 0);
     flags = flags | O_NONBLOCK;
     if ((::fcntl(sockfd, F_SETFL, flags)) == -1) {
-        LOG_ERROR << "setNonBlockAndCloseOnExec: fcntl error - set O_NONBLOCK";
+        LOG_ERROR << "fcntl error - set O_NONBLOCK";
     }
 
     flags = ::fcntl(sockfd, F_GETFL, 0);
     flags |= FD_CLOEXEC;
     if (::fcntl(sockfd, F_SETFL, flags) == -1) {
-        LOG_ERROR << "setNonBlockAndCloseOnExec: fcntl error - set FD_CLOEXEC";
+        LOG_ERROR << "fcntl error - set FD_CLOEXEC";
     }
 }
 
@@ -59,9 +59,10 @@ void listenOrDie(int sockfd)
 int accept(int sockfd, struct sockaddr_in6* addr)
 {
     socklen_t addrlen = static_cast<socklen_t>(sizeof(*addr));
+    LOG_INFO << "listen fd: " << sockfd;
     int connfd = ::accept(sockfd,
                 static_cast<struct sockaddr*>((void*)addr), &addrlen);
-    setNonBlockAndCloseOnExec(connfd);
+    //setNonBlockAndCloseOnExec(connfd);
     if (connfd < 0) {
         auto saved_errno = errno;
         LOG_ERROR << "accept";
@@ -82,8 +83,8 @@ int accept(int sockfd, struct sockaddr_in6* addr)
             case ENOMEM:
             case ENOTSOCK:
             case EOPNOTSUPP:
-                LOG_FATAL << "unexpected error of ::accpet: "
-                          << saved_errno << ::strerror(saved_errno);
+                LOG_FATAL << "unexpected error of accpet. errno: "
+                          << saved_errno << " " << ::strerror(saved_errno);
                 break;
             default:
                 LOG_FATAL << "unknown error of ::accept: " << saved_errno;
@@ -127,15 +128,10 @@ int epoll_create(int size)
     return fd;
 }
 
-int epoll_ctl(int epfd, int op, int fd, struct epoll_event* event)
-{
-
-}
-
 int epoll_wait(int epfd, struct epoll_event* events, int maxevents, int timeout)
 {
     int nfds;
-    if ((nfds = ::epoll_wait(epfd, events, maxevents, timeout) < 0) {
+    if ((nfds = ::epoll_wait(epfd, events, maxevents, timeout)) < 0) {
         if (errno != EINTR) {
             LOG_ERROR << "epoll_wait";
         }

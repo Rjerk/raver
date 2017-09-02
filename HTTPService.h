@@ -2,12 +2,14 @@
 #define HTTP_SERVICE_H
 
 #include "noncopyable.h"
+
 #include <functional>
 #include <string>
 
 namespace raver {
 
 class ServiceManager;
+class IOManager;
 class HTTPClientConnection;
 class HTTPRespond;
 
@@ -22,10 +24,11 @@ public:
 
     void stop(); // tell manager I'm done.
 
-    void asyncConnect(const std::string& host, int port, const ConnectCallback& cb);
+    //void asyncConnect(const std::string& host, int port, const ConnectCallback& cb);
 
-    void connect(const std::string& host, int port, HTTPClientConnection** conn);
+    //void connect(const std::string& host, int port, HTTPClientConnection** conn);
 
+    IOManager* ioManager() const;
 private:
     void accept(int port);
 

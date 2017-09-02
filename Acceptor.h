@@ -16,7 +16,7 @@ public:
 
     ~Acceptor();
 
-    void accept();
+    void startAccept();
 
     void close();
 
@@ -26,7 +26,7 @@ private:
 
 private:
     int listenfd_;
-    IOManager* io_;
+    IOManager* manager_;
     Channel* channel_;
     AcceptorCallback accept_cb_;
 };
