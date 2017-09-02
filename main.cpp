@@ -14,8 +14,7 @@ int main(int argc, char** argv)
     int num_thread = atoi(argv[2]);
 
     raver::ServiceManager manager(num_thread);
-    raver::HTTPService http_serv(port, &manager);
+    raver::HTTPService http_service(port, &manager);
 
     manager.run();
-
 }
