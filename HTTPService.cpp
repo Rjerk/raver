@@ -9,12 +9,13 @@ namespace raver {
 HTTPService::HTTPService(int port, ServiceManager* sm)
     : manager_(sm)
 {
-    manager_->registry(port, std::bind(&HTTPService::accept, this, std::placeholders::_1));
+    manager_->registerAcceptor(port, std::bind(&HTTPService::afterAccept, this, std::placeholders::_1));
     LOG_INFO << "HTTPService ctor";
 }
 
 HTTPService::~HTTPService()
 {
+    LOG_DEBUG << "HTTPService dtor";
 }
 
 void HTTPService::stop()
@@ -46,8 +47,9 @@ void HTTPService::connect(const std::string& host, int port, HTTPClientConnectio
 }
 */
 
-void HTTPService::accept(int connfd)
+void HTTPService::afterAccept(int connfd)
 {
+    LOG_DEBUG << "service accept begin";
     if (manager_->isStopped()) {
         return ;
     }
@@ -57,7 +59,8 @@ void HTTPService::accept(int connfd)
         return ;
     }
 
-    HTTPConnection conn(this, connfd); // build a connection and start read.
+    HTTPConnection* conn = new HTTPConnection(this, connfd); (void) conn;
+    LOG_DEBUG << "service accept end";
 }
 
 IOManager* HTTPService::ioManager() const

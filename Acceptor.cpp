@@ -3,6 +3,8 @@
 #include "Utils.h"
 #include "Channel.h"
 #include <strings.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 
 namespace raver {
 
@@ -22,7 +24,7 @@ Acceptor::Acceptor(IOManager* manager, int port, const AcceptorCallback& cb)
     wrapper::listenOrDie(listenfd_);
 
     channel_ = manager_->newChannel(listenfd_, std::bind(&Acceptor::doAccept, this),
-                                          std::bind(&Acceptor::doNothing, this));
+                                               std::bind(&Acceptor::doNothing, this));
 }
 
 Acceptor::~Acceptor()
@@ -50,7 +52,13 @@ void Acceptor::doAccept()
 {
     for ( ; ; ) {
         struct sockaddr_in clntaddr;
-        int connfd = wrapper::accept(listenfd_, (struct sockaddr_in6 *) &clntaddr);
+        socklen_t len = sizeof(clntaddr);
+        int connfd = ::accept(listenfd_, (struct sockaddr *) &clntaddr, &len);
+        if (connfd < 0 && errno == EAGAIN) {
+            channel_->readWhenReady();
+            break;
+        }
+        LOG_INFO << "got a new connection.";
         accept_cb_(connfd);
     }
 }

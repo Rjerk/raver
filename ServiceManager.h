@@ -22,7 +22,7 @@ public:
 
     void stop();
 
-    void registry(int port, AcceptorCallback cb);
+    void registerAcceptor(int port, AcceptorCallback cb);
 
     bool isStopped() { return stopped_; }
     IOManager* ioManager() { return io_; }

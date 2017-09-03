@@ -6,7 +6,7 @@ namespace raver {
 
 void Channel::readWhenReady()
 {
-    LOG_INFO << "readWhenReady";
+    LOG_INFO << "readWhenReady begin";
     bool ready = false;
     {
         MutexGuard guard(mtx_);
@@ -20,11 +20,12 @@ void Channel::readWhenReady()
     if (ready) {
         getPool()->addTask(readcb_);
     }
+    LOG_INFO << "readWhenReady end";
 }
 
 void Channel::writeWhenReady()
 {
-    LOG_INFO << "writeWhenReady";
+    LOG_INFO << "writeWhenReady begin";
     bool ready = false;
     {
         MutexGuard guard(mtx_);
@@ -38,6 +39,7 @@ void Channel::writeWhenReady()
     if (ready) {
         getPool()->addTask(writecb_);
     }
+    LOG_INFO << "writeWhenReady end";
 }
 
 Channel::Channel(IOManager* io, int fd,
@@ -47,6 +49,7 @@ Channel::Channel(IOManager* io, int fd,
       readcb_(readcb), writecb_(writecb), mtx_(), next_(nullptr),
       can_read_(false), can_write_(false), waiting_read_(false), waiting_write_(false)
 {
+    LOG_INFO << "Channel ctor";
     wrapper::setNonBlockAndCloseOnExec(fd_);
 }
 
@@ -56,13 +59,14 @@ Channel::~Channel()
 
 void Channel::readIfWaiting()
 {
-    LOG_INFO << "readIfWaiting";
+    LOG_INFO << "readIfWaiting begin";
     bool ready = false;
     {
         MutexGuard guard(mtx_);
         if (waiting_read_) {
             ready = true;
             waiting_read_ = false;
+            LOG_DEBUG << "readIfWaiting ready";
         } else {
             can_read_ = true;
         }
@@ -70,11 +74,12 @@ void Channel::readIfWaiting()
     if (ready) {
         getPool()->addTask(readcb_);
     }
+    LOG_INFO << "readIfWaiting end";
 }
 
 void Channel::writeIfWaiting()
 {
-    LOG_INFO << "writeIfWaiting";
+    LOG_INFO << "writeIfWaiting begin";
     bool ready = false;
     {
         MutexGuard guard(mtx_);
@@ -88,6 +93,7 @@ void Channel::writeIfWaiting()
     if (ready) {
         getPool()->addTask(writecb_);
     }
+    LOG_INFO << "writeIfWaiting end";
 }
 
 ThreadPool* Channel::getPool()

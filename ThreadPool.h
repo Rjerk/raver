@@ -29,6 +29,7 @@ public:
     template <typename Func, typename... Args>
     void addTask(Func&& func, Args&&... args)
 	{
+        LOG_DEBUG << "addTask begin";
 		auto execute = std::bind(std::forward<Func>(func), std::forward<Args>(args)...);
 		using ReturnType = typename std::result_of<Func(Args...)>::type;
 	    using PackagedTask = std::packaged_task<ReturnType ()>;
@@ -37,8 +38,9 @@ public:
 	        MutexGuard guard(mtx_);
 	        tasks_.emplace([task]() { (*task)(); });
 	    }
+        LOG_DEBUG << "before notify";
 	    cv_.notify_one(); // notify a thread to process the task.
-        LOG_INFO << "new task added in threadpool.";
+        LOG_DEBUG << "addTask end";
 	}
 
     void stop();

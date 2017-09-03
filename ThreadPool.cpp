@@ -22,6 +22,7 @@ ThreadPool::ThreadPool(size_t num_thread)
 
 ThreadPool::~ThreadPool()
 {
+    LOG_DEBUG << "ThreadPool dtor";
     if (!quit_) {
         stop();
     }
@@ -48,6 +49,7 @@ size_t ThreadPool::taskNum() const
 
 void ThreadPool::worker()
 {
+    LOG_DEBUG << "worker begin";
     while (true) {
         TaskType task;
         {
@@ -64,8 +66,10 @@ void ThreadPool::worker()
             task = std::move(tasks_.front());
             tasks_.pop();
         }
+        LOG_DEBUG << "task process";
         task(); // process task.
     }
+    LOG_DEBUG << "worker end";
 }
 
 }

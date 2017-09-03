@@ -30,7 +30,7 @@ public:
 
     IOManager* ioManager() const;
 private:
-    void accept(int port);
+    void afterAccept(int port);
 
 private:
     ServiceManager* manager_;

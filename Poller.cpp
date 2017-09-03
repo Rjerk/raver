@@ -20,10 +20,12 @@ struct Poller::InternalPoller {
 Poller::Poller()
     : poller_(new InternalPoller())
 {
+    LOG_DEBUG << "Poller dtor";
 }
 
 Poller::~Poller()
 {
+    LOG_DEBUG << "Poller ctor";
     if (poller_->fd_ >= 0) {
         ::close(poller_->fd_);
     }
@@ -48,6 +50,7 @@ int Poller::poll()
             continue;
         } else {
             LOG_ERROR << "epoll_wait";
+            exit(1);
         }
     }
     return ret;
@@ -55,6 +58,7 @@ int Poller::poll()
 
 void Poller::setEvent(int fd, Channel* data)
 {
+    LOG_DEBUG << "setEvent begin";
     struct epoll_event ev;
     ev.events = EPOLLIN | EPOLLOUT | EPOLLPRI |
                 EPOLLERR | EPOLLHUP | EPOLLET;
@@ -62,26 +66,31 @@ void Poller::setEvent(int fd, Channel* data)
     if (::epoll_ctl(poller_->fd_, EPOLL_CTL_ADD, fd, &ev) != 0) {
         LOG_ERROR << "Cannot add epoll descriptor";
     }
+    LOG_DEBUG << "setEvent end";
 }
 
 void Poller::getEvent(int i, int* events, Channel** data)
 {
+    LOG_DEBUG << "getEvent begin";
     *events &= 0x00000000;
     *data = reinterpret_cast<Channel*>(poller_->events_[i].data.ptr);
     auto flags = poller_->events_[i].events;
     if ((flags & EPOLLHUP) && !(flags & EPOLLIN)) {
         LOG_WARN << "fd: " << poller_->fd_ << " EPOLLHUP";
     }
+
     if (flags & EPOLLERR) {
-        LOG_DEBUG << "EPOLLERR";
         *events |= PollEvent::ERROR;
+        return ;
     }
-    if (flags & (EPOLLPRI | EPOLLIN | EPOLLHUP)) {
+
+    if (flags & (EPOLLIN | EPOLLHUP)) {
         *events |= PollEvent::READ;
     }
-    if (flags & EPOLLOUT) {
+    if (flags & (EPOLLOUT | EPOLLHUP)) {
         *events |= PollEvent::WRITE;
     }
+    LOG_DEBUG << "getEvent end";
 }
 
 }

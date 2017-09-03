@@ -12,7 +12,7 @@ public:
     enum PollEvent {
         ERROR = 0x00000001,
         READ  = 0x00000002,
-        WRITE = 0x00000003
+        WRITE = 0x00000004
     };
 
     Poller();
