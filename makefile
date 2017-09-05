@@ -1,4 +1,4 @@
-objects = main.o ServiceManager.o HTTPService.o HTTPConnection.o Channel.o Acceptor.o IOManager.o Poller.o ThreadPool.o Timer.o TimeStamp.o Logger.o Utils.o
+objects = main.o ServiceManager.o HTTPService.o HTTPParser.o HTTPRequest.o HTTPResponse.o  HTTPConnection.o Channel.o Acceptor.o IOManager.o Poller.o ThreadPool.o Timer.o TimeStamp.o Logger.o Utils.o
 
 flags = -Wall -O -std=c++11 -pthread
 
@@ -18,6 +18,15 @@ HTTPService.o: HTTPService.cpp
 
 HTTPConnection.o: HTTPConnection.cpp
 	g++ $(flags) -c HTTPConnection.cpp
+
+HTTPResponse.o: HTTPResponse.cpp
+	g++ $(flags) -c HTTPResponse.cpp
+
+HTTPRequest.o: HTTPRequest.cpp
+	g++ $(flags) -c HTTPRequest.cpp
+
+HTTPParser.o: HTTPParser.cpp
+	g++ $(flags) -c HTTPParser.cpp
 
 Channel.o: Channel.cpp
 	g++ $(flags) -c Channel.cpp

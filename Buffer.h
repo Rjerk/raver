@@ -1,6 +1,7 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
+#include <string>
 #include <cstring>
 #include <vector>
 #include <algorithm>
@@ -53,6 +54,11 @@ public:
         makeSpace(len);
         std::copy(data, data+len, beginWrite());
         writer_index_ += len;
+    }
+
+    void append(const std::string& str)
+    {
+        append(str.data(), str.size());
     }
 
     void append(const void* data, size_t len)

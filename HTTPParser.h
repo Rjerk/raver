@@ -17,15 +17,15 @@ public:
         GotAll
     };
 
-    HTTPParser() { }
+    HTTPParser(): state_(ExpectRequstLine) { }
 
-    static bool gotAll() { return state_ == GotAll; }
-    static bool parseRequest(Buffer* in, HTTPRequest* req);
-    static bool parseRequestLine(const char* begin, const char* end, HTTPRequest** req);
+    bool gotAll() { return state_ == GotAll; }
+    bool parseRequest(Buffer* in, HTTPRequest* req);
+    bool parseRequestLine(const char* begin, const char* end, HTTPRequest** req);
 private:
-    static RequestParseState state_;
-
+    RequestParseState state_;
 };
+
 
 }
 

@@ -23,34 +23,11 @@ void HTTPService::stop()
     manager_->stop();
 }
 
-/*
-void HTTPService::asyncConnect(const std::string& host, int port, const ConnectCallback& cb)
-{
-    if (manager_->isStopped()) {
-        return ;
-    }
-
-    //HTTPClientConnection conn(this);
-    //conn.connect(host, port, cb);
-
-}
-
-void HTTPService::connect(const std::string& host, int port, HTTPClientConnection** conns)
-{
-    Notification n;
-    asyncConnect(host, port, [&](HTTPClientConnection* new_conn)
-                             {
-                                *conns = new_conn;
-                                n.notify();
-                             });
-    n.wait();
-}
-*/
-
 void HTTPService::afterAccept(int connfd)
 {
     LOG_DEBUG << "service accept begin";
     if (manager_->isStopped()) {
+        LOG_DEBUG << "manager_ stopped.";
         return ;
     }
     if (connfd < 0) {

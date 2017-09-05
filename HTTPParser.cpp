@@ -4,8 +4,6 @@
 
 namespace raver {
 
-HTTPParser::RequestParseState state_ = HTTPParser::RequestParseState::ExpectRequstLine;
-
 bool HTTPParser::parseRequest(Buffer* buf, HTTPRequest* req)
 {
     bool ok = true;

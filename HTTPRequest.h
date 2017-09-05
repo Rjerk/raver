@@ -30,6 +30,9 @@ public:
 
     void setBody(std::string&& body)
     { body_ = std::move(body); }
+
+    std::string getHeader(const std::string& field) const;
+    Version getVersion() const { return version_; }
 private:
     Method method_;
     Version version_;

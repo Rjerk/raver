@@ -6,6 +6,8 @@
 
 namespace raver {
 
+class Buffer;
+
 class HTTPResponse {
 public:
     enum HTTPStatusCode {
@@ -15,6 +17,8 @@ public:
         BadRequest400 = 400,
         NotFound404 = 404
     };
+
+    explicit HTTPResponse(bool close);
 
     void setStatusCode(HTTPStatusCode code)
     { status_code_ = code; }
@@ -28,6 +32,7 @@ public:
     void setBody(const std::string& body)
     { body_ = body; }
 
+    void appendToBuffer(Buffer* out);
 private:
 
     HTTPStatusCode status_code_;

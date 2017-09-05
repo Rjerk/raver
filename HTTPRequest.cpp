@@ -3,8 +3,19 @@
 namespace raver {
 
 HTTPRequest::HTTPRequest()
-    : method_(Invalid), version_(Unknown)
+    : method_(Method::Invalid), version_(Version::Unknown)
 {
+}
+
+void HTTPRequest::clear()
+{
+    method_ = Method::Invalid;
+    version_ = Version::Unknown;
+    // no need to free memory.
+    path_.clear();
+    query_.clear();
+    headers_.clear();
+    body_.clear();
 }
 
 void HTTPRequest::addHeader(const char* begin, const char* colon, const char* end)
@@ -39,7 +50,19 @@ bool HTTPRequest::setMethod(const char* beg, const char* end)
         method_ = Method::Delete;
     } else {
         method_ = Method::Invalid;
+        return false;
     }
+    return true;
+}
+
+std::string HTTPRequest::getHeader(const std::string& field) const
+{
+    std::string result;
+    auto it = headers_.find(field);
+    if (it != headers_.end()) {
+        result = it->second;
+    }
+    return result;
 }
 
 }

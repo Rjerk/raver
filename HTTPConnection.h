@@ -5,6 +5,7 @@
 #include "Buffer.h"
 #include "HTTPRequest.h"
 #include "HTTPResponse.h"
+#include "HTTPParser.h"
 
 #include <functional>
 
@@ -29,6 +30,8 @@ private:
     bool parseRequestOK();
 
     bool handleRequest();
+
+    void close();
 private:
     HTTPService* service_;
     int connfd_;
@@ -39,6 +42,8 @@ private:
 
     HTTPRequest request_;
     HTTPResponse response_;
+    HTTPParser parser_;
+    HTTPCallback cb_;
 };
 
 
