@@ -41,6 +41,7 @@ HTTPConnection::~HTTPConnection()
         service_->ioManager()->removeChannel(channel_);
     }
     close();
+    delete this;
 }
 
 void HTTPConnection::close()
@@ -52,15 +53,12 @@ void HTTPConnection::close()
 
 void HTTPConnection::startRead()
 {
-    LOG_DEBUG << "startRead begin";
+    // we get a new connection, so socket can be read.
     channel_->readWhenReady();
-    LOG_DEBUG << "startRead end";
 }
 
 void HTTPConnection::doRead()
 {
-    LOG_DEBUG << "doRead begin";
-
     for ( ; ; ) {
         int n = ::read(connfd_, in_.beginWrite(), in_.writableBytes());
         if (n > 0) {
@@ -69,6 +67,7 @@ void HTTPConnection::doRead()
         }
 
         if (n < 0 && errno == EAGAIN) {
+            LOG_ERROR << "EAGAIN in read.";
             channel_->readWhenReady();
             break;
         } else if (n < 0) {
@@ -82,24 +81,23 @@ void HTTPConnection::doRead()
             break;
         }
     }
-    LOG_DEBUG << "doRead end";
 }
 
 void HTTPConnection::doWrite()
 {
-    LOG_DEBUG << "doWrite begin.";
     for ( ; ; ) {
         ssize_t n = ::write(connfd_, out_.beginRead(), out_.readableBytes());
         if (n > 0) {
             LOG_INFO << "write: " << out_.beginRead();
-            out_.hasWriten(n);
+            out_.retrieve(n);
             if (out_.readableBytes() == 0) {
                 break;
             }
         } else if (n == -1 && errno == EAGAIN) {
+            LOG_DEBUG << "get eagain.";
             channel_->writeWhenReady();
             break;
-        } else if (n == -1) {
+        } else if (n == -1) { // other error.
             LOG_ERROR << "write error." << strerror(errno);
             break;
         } else if (n == 0) {
@@ -110,12 +108,10 @@ void HTTPConnection::doWrite()
     }
     // shutdown after send respond.
     close();
-    LOG_DEBUG << "doWrite() end";
 }
 
 bool HTTPConnection::parseRequestOK()
 {
-    LOG_DEBUG << "parseRequestOK begin";
     request_.clear();
     for ( ; ; ) {
         bool ret = parser_.parseRequest(&in_, &request_);
@@ -126,10 +122,8 @@ bool HTTPConnection::parseRequestOK()
         }
 
         if (!handleRequest()) {
-    LOG_DEBUG << "parseRequestOK end1";
             return false;
         } else {
-    LOG_DEBUG << "parseRequestOK end2";
             return true;
         }
     }
@@ -146,7 +140,6 @@ bool HTTPConnection::handleRequest()
         cb_(request_, &response_);
         response_.setCloseConnection(close_req);
         response_.appendToBuffer(&out_); // write respond to output buffer.
-        LOG_DEBUG << "buffer: " << out_.beginRead();
         return true;
     } else {
         return false;

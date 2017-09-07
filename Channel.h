@@ -16,9 +16,9 @@ class Channel {
     friend class IOManager;
 public:
     void readWhenReady();
-    void writeWhenReady();
-
     void readIfWaiting();
+
+    void writeWhenReady();
     void writeIfWaiting();
 
     void setReadCallback(const Callback& readcb) { readcb_ = readcb; }

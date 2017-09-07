@@ -30,6 +30,8 @@ public:
     Channel* newChannel(int listenfd, const Callback& readcb, const Callback& writecb);
 
     void removeChannel(Channel* ch);
+
+    bool stopped() const;
 private:
     ThreadPool* pool_;
     Poller* poller_;
@@ -41,7 +43,7 @@ private:
     TimerQueue timer_queue_;
 
     std::mutex mtx_timer_queue_;
-    std::mutex mtx_stop_;
+    mutable std::mutex mtx_stop_;
     std::mutex mtx_channel_;
     std::condition_variable cv_polling_;
 };

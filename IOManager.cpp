@@ -42,20 +42,23 @@ IOManager::~IOManager()
 
 void IOManager::addTask(const TaskType& task)
 {
-    LOG_DEBUG << "addTask begin";
     pool_->addTask(task);
-    LOG_DEBUG << "addTask end";
+}
+
+bool IOManager::stopped() const
+{
+    MutexGuard guard(mtx_stop_);
+    return stopped_;
 }
 
 void IOManager::poll()
 {
-    LOG_DEBUG << "poll begin";
     {
         MutexGuard guard(mtx_stop_);
         polling_ = true;
     }
 
-    while (!stopped_) {
+    while (!stopped()) {
         // got events.
         int nready = poller_->poll();
 
@@ -76,9 +79,9 @@ void IOManager::poll()
         }
 
         int event_flags;
-        Channel* ch;
         for (int i = 0; i < nready; ++i) {
             LOG_DEBUG << "events num: " << nready;
+            Channel* ch = nullptr;
             poller_->getEvent(i, &event_flags, &ch);
             if (event_flags & (Poller::PollEvent::READ | Poller::PollEvent::ERROR)) {
                 LOG_DEBUG << "got readable event";
@@ -109,15 +112,13 @@ void IOManager::poll()
         polling_ = false;
     }
     cv_polling_.notify_all();
-
-    LOG_DEBUG << "poll end";
 }
 
 void IOManager::stop()
 {
     {
         MutexGuard guard(mtx_stop_);
-        if (stopped_) {
+        if (stopped()) {
             return ;
         }
         stopped_ = true;
@@ -150,10 +151,8 @@ void IOManager::addTimer(double delay, const TaskType& task)
 
 Channel* IOManager::newChannel(int listenfd, const Callback& readcb, const Callback& writecb)
 {
-    LOG_DEBUG << "newChannel begin";
     Channel* new_ch = new Channel(this, listenfd, readcb, writecb);
     poller_->setEvent(listenfd, new_ch);
-    LOG_DEBUG << "newChannel end";
     return new_ch;
 }
 

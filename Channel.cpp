@@ -4,9 +4,9 @@
 
 namespace raver {
 
+// if socket can be read.
 void Channel::readWhenReady()
 {
-    LOG_INFO << "readWhenReady begin";
     bool ready = false;
     {
         MutexGuard guard(mtx_);
@@ -20,26 +20,36 @@ void Channel::readWhenReady()
     if (ready) {
         getPool()->addTask(readcb_);
     }
-    LOG_INFO << "readWhenReady end";
 }
 
-void Channel::writeWhenReady()
+
+// if socket wants to be read.
+void Channel::readIfWaiting()
 {
-    LOG_INFO << "writeWhenReady begin";
     bool ready = false;
     {
         MutexGuard guard(mtx_);
-        if (can_write_) {
+        if (waiting_read_) {
             ready = true;
-            can_write_ = false;
+            waiting_read_ = false;
         } else {
-            waiting_write_ = true;
+            can_read_ = true;
         }
     }
     if (ready) {
-        getPool()->addTask(writecb_);
+        getPool()->addTask(readcb_);
     }
-    LOG_INFO << "writeWhenReady end";
+}
+
+// if socket can be writed.
+void Channel::writeWhenReady()
+{
+    getPool()->addTask(writecb_);
+}
+
+void Channel::writeIfWaiting()
+{
+    getPool()->addTask(writecb_);
 }
 
 Channel::Channel(IOManager* io, int fd,
@@ -55,45 +65,6 @@ Channel::Channel(IOManager* io, int fd,
 
 Channel::~Channel()
 {
-}
-
-void Channel::readIfWaiting()
-{
-    LOG_INFO << "readIfWaiting begin";
-    bool ready = false;
-    {
-        MutexGuard guard(mtx_);
-        if (waiting_read_) {
-            ready = true;
-            waiting_read_ = false;
-            LOG_DEBUG << "readIfWaiting ready";
-        } else {
-            can_read_ = true;
-        }
-    }
-    if (ready) {
-        getPool()->addTask(readcb_);
-    }
-    LOG_INFO << "readIfWaiting end";
-}
-
-void Channel::writeIfWaiting()
-{
-    LOG_INFO << "writeIfWaiting begin";
-    bool ready = false;
-    {
-        MutexGuard guard(mtx_);
-        if (waiting_write_) {
-            ready = true;
-            waiting_write_ = false;
-        } else {
-            can_write_ = true;
-        }
-    }
-    if (ready) {
-        getPool()->addTask(writecb_);
-    }
-    LOG_INFO << "writeIfWaiting end";
 }
 
 ThreadPool* Channel::getPool()

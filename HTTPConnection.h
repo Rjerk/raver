@@ -35,6 +35,7 @@ private:
 private:
     HTTPService* service_;
     int connfd_;
+    bool done = false;
     Channel* channel_;
 
     Buffer in_;

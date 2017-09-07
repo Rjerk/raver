@@ -5,6 +5,7 @@
 #include <strings.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <string.h>
 
 namespace raver {
 
@@ -55,6 +56,7 @@ void Acceptor::doAccept()
         socklen_t len = sizeof(clntaddr);
         int connfd = ::accept(listenfd_, (struct sockaddr *) &clntaddr, &len);
         if (connfd < 0 && errno == EAGAIN) {
+            LOG_DEBUG << "accept EAGAIN" << strerror(errno);
             channel_->readWhenReady();
             break;
         }

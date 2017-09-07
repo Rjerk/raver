@@ -49,7 +49,6 @@ size_t ThreadPool::taskNum() const
 
 void ThreadPool::worker()
 {
-    LOG_DEBUG << "worker begin";
     while (true) {
         TaskType task;
         {
@@ -69,7 +68,6 @@ void ThreadPool::worker()
         LOG_DEBUG << "task process";
         task(); // process task.
     }
-    LOG_DEBUG << "worker end";
 }
 
 }

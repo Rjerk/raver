@@ -25,7 +25,6 @@ void HTTPService::stop()
 
 void HTTPService::afterAccept(int connfd)
 {
-    LOG_DEBUG << "service accept begin";
     if (manager_->isStopped()) {
         LOG_DEBUG << "manager_ stopped.";
         return ;
@@ -37,7 +36,6 @@ void HTTPService::afterAccept(int connfd)
     }
 
     HTTPConnection* conn = new HTTPConnection(this, connfd); (void) conn;
-    LOG_DEBUG << "service accept end";
 }
 
 IOManager* HTTPService::ioManager() const
