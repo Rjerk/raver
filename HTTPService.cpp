@@ -2,7 +2,6 @@
 #include "ServiceManager.h"
 #include "Logger.h"
 #include "HTTPConnection.h"
-#include "Notification.h"
 
 namespace raver {
 

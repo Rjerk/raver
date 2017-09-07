@@ -20,7 +20,11 @@ Acceptor::Acceptor(IOManager* manager, int port, const AcceptorCallback& cb)
     servaddr.sin_port = htons(port);
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     int opt = 1;
-    ::setsockopt(listenfd_, SOL_SOCKET, SO_REUSEADDR, (const void*)&opt, sizeof(opt));
+    int ret = ::setsockopt(listenfd_, SOL_SOCKET, SO_REUSEADDR, (const void*)&opt, sizeof(opt));
+    if (ret < 0 && opt) {
+        LOG_SYSERR << "SO_REUSEPORT failed.";
+    }
+    ::setsockopt(listenfd_, SOL_SOCKET, SO_REUSEPORT, (const void*)&opt, sizeof(opt));
     wrapper::bindOrDie(listenfd_, (struct sockaddr*) &servaddr);
     wrapper::listenOrDie(listenfd_);
 
