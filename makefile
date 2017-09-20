@@ -1,4 +1,4 @@
-objects = main.o ServiceManager.o HTTPService.o HTTPParser.o HTTPRequest.o HTTPResponse.o  HTTPConnection.o Channel.o Acceptor.o IOManager.o Poller.o ThreadPool.o Timer.o TimeStamp.o Logger.o Utils.o
+objects = main.o ServiceManager.o HTTPService.o HTTPParser.o HTTPRequest.o HTTPResponse.o  HTTPConnection.o Channel.o Acceptor.o IOManager.o Poller.o ThreadPool.o Timer.o TimeStamp.o Logger.o Utils.o RJson.o
 
 flags = -Wall -O -std=c++11 -pthread
 
@@ -51,6 +51,9 @@ TimeStamp.o: TimeStamp.cpp
 
 Logger.o: Logger.cpp
 	g++ $(flags) -c Logger.cpp
+
+RJson.o: RJson.cpp
+	g++ $(flags) -c RJson.cpp
 
 Utils.o: Utils.cpp
 	g++ $(flags) -c Utils.cpp

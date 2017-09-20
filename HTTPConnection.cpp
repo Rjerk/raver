@@ -4,6 +4,7 @@
 #include "IOManager.h"
 #include "Utils.h"
 #include "Logger.h"
+#include "RJson.h"
 
 #include <unistd.h>
 #include <strings.h>
@@ -18,15 +19,42 @@ void defaultHTTPCallback(const HTTPRequest&, HTTPResponse* resp)
     resp->setStatusCode(HTTPResponse::HTTPStatusCode::NotFound404);
     resp->setStatusMessage("Not Found");
     resp->setCloseConnection(true);
+    resp->setBody("<html>"
+            "<head><title>404 Not Found</title></head>"
+            "<body bgcolor=\"white\">"
+            "<center><h1>404 Not Found</h1></center>"
+            "<hr><center>raver</center>"
+            "</body>"
+            "</html>");
 }
 
 constexpr size_t BUF_SIZE = 1024;
+
+void handleHTTPCallback(const HTTPRequest& request, HTTPResponse* resp)
+{
+    switch (request.getMethod()) {
+        case HTTPRequest::Method::Get:
+            resp->setStatusCode(HTTPResponse::HTTPStatusCode::OK200);
+            resp->setStatusMessage("OK");
+            resp->setCloseConnection(true);
+            resp->setBody("<html><head><title> Welcome to raver </title> </head>"
+                        "<body bgcolor=\"white\"><center><h1> Hello, world </h1></center>"
+                        "<hr><center>raver</center></body></html>");
+            break;
+        case HTTPRequest::Method::Post:
+            // TODO
+            break;
+        default:
+            //assert(0 && "never come here");
+            break;
+    }
+}
 
 }
 
 HTTPConnection::HTTPConnection(HTTPService* service, int connfd)
     : service_(service), connfd_(connfd), channel_(nullptr),
-      in_(), out_(), request_(), response_(false), parser_(), cb_(defaultHTTPCallback)
+      in_(), out_(), request_(), response_(false), parser_(), cb_(handleHTTPCallback)
 {
     LOG_INFO << "HTTPConnection ctor";
     channel_ = service_->ioManager()->newChannel(connfd, std::bind(&HTTPConnection::doRead, this),
@@ -145,5 +173,6 @@ bool HTTPConnection::handleRequest()
         return false;
     }
 }
+
 
 }

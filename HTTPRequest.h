@@ -33,6 +33,7 @@ public:
 
     std::string getHeader(const std::string& field) const;
     Version getVersion() const { return version_; }
+    Method getMethod() const { return method_; }
 private:
     Method method_;
     Version version_;
