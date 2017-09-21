@@ -27,12 +27,9 @@ Poller封装了epoll，采用level trigger。
 
 HTTPConnction使用非阻塞IO，避免阻塞在读写上，最大限度地复用thread-of-control。它拥有自己的input和output Buffer，因为TCP是一个无边界的字节流协议，服务器必须处理接收不完整的情况。当只写了一部分数据时，去注册EPOLLOUT事件，一旦socket可写就立即发送数据;当读数据不完整时会等数据读完再处理，不会触发不间断的EPOLLIN事件，造成 busy-loop。Buffer参考了[muduo](https://github.com/chenshuo/muduo) 网络库的实现。
 
-默认响应为发送 404。
-
 ## TODO
 
 [ ] 有些思路待完善，一些设计不当地方待改善。
 [ ] 正确地关闭服务器而不会产生内存泄露，用`std::unique_ptr`管理资源。
-[ ] 使用time wheeling管理连接，接收连接时插入堆中，关闭堆从堆中移除连接
 [ ] 支持动态内容
 [x] JSON 配置服务器

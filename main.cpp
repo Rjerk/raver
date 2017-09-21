@@ -1,6 +1,6 @@
-#include "ServiceManager.h"
-#include "HTTPService.h"
-#include "RJson.h"
+#include "./http/ServiceManager.h"
+#include "./http/HTTPService.h"
+#include "./base/RJson.h"
 
 #include <iostream>
 
@@ -11,7 +11,6 @@ int main(/*int argc, char** argv*/)
     assert(ret == rjson::PARSE_OK);
     auto value = parser.getValue();
     assert(value->getType() == rjson::RJSON_OBJECT);
-    auto doc_root = *(value->getValueFromObject("doc-root")->getString());
     auto thread_num = value->getValueFromObject("thread-num")->getNumber();
     auto port = value->getValueFromObject("port")->getNumber();
     /*

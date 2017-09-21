@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>raver</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+
+<body>
+<h1>raver</h1>
+<p>基于I/O多路复用epoll和线程池的并发HTTP服务器</p>
+<h2>使用</h2>
+<pre><code>$ make
+$ ./server [port] [thread-num]
+</code></pre>
+<h2>实现模型</h2>
+<p>采用 epoll + threadpool 模型来实现并发，用 <code>SO_REUSEPORT</code> 允许多个套接字绑定在同一主机的同一个端口上，在内核层次上实现进行简单的负载均衡。</p>
+</body>
+</html>

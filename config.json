@@ -1,5 +1,6 @@
 {
-    "doc-root": "/home/raver/www/",
+    "doc-root": "./www/",
+    "index-page": "index.html",
     "thread-num": 10,
     "port": 8888
 }
