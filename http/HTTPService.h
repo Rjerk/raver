@@ -1,7 +1,7 @@
 #ifndef HTTP_SERVICE_H
 #define HTTP_SERVICE_H
 
-#include "noncopyable.h"
+#include "../base/noncopyable.h"
 
 #include <functional>
 #include <string>

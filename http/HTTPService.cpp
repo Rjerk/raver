@@ -1,7 +1,7 @@
 #include "HTTPService.h"
 #include "ServiceManager.h"
-#include "Logger.h"
 #include "HTTPConnection.h"
+#include "../base/Logger.h"
 
 namespace raver {
 

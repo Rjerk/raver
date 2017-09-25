@@ -1,4 +1,6 @@
-objects = main.o ServiceManager.o HTTPService.o HTTPParser.o HTTPRequest.o HTTPResponse.o  HTTPConnection.o Channel.o Acceptor.o IOManager.o Poller.o ThreadPool.o Timer.o TimeStamp.o Logger.o Utils.o RJson.o
+objects = main.o ServiceManager.o HTTPService.o HTTPParser.o HTTPRequest.o \
+		  HTTPResponse.o HTTPConnection.o Channel.o Acceptor.o IOManager.o Poller.o \
+		  ThreadPool.o Timer.o TimeStamp.o Logger.o Utils.o RJson.o
 
 flags = -Wall -O -std=c++11 -pthread
 
@@ -10,53 +12,53 @@ server: $(objects)
 main.o: main.cpp
 	g++ $(flags) -c main.cpp
 
-ServiceManager.o: ServiceManager.cpp
-	g++ $(flags) -c ServiceManager.cpp
+ServiceManager.o: http/ServiceManager.cpp
+	g++ $(flags) -c http/ServiceManager.cpp
 
-HTTPService.o: HTTPService.cpp
-	g++ $(flags) -c HTTPService.cpp
+HTTPService.o: http/HTTPService.cpp
+	g++ $(flags) -c http/HTTPService.cpp
 
-HTTPConnection.o: HTTPConnection.cpp
-	g++ $(flags) -c HTTPConnection.cpp
+HTTPConnection.o: http/HTTPConnection.cpp
+	g++ $(flags) -c http/HTTPConnection.cpp
 
-HTTPResponse.o: HTTPResponse.cpp
-	g++ $(flags) -c HTTPResponse.cpp
+HTTPResponse.o: http/HTTPResponse.cpp
+	g++ $(flags) -c http/HTTPResponse.cpp
 
-HTTPRequest.o: HTTPRequest.cpp
-	g++ $(flags) -c HTTPRequest.cpp
+HTTPRequest.o: http/HTTPRequest.cpp
+	g++ $(flags) -c http/HTTPRequest.cpp
 
-HTTPParser.o: HTTPParser.cpp
-	g++ $(flags) -c HTTPParser.cpp
+HTTPParser.o: http/HTTPParser.cpp
+	g++ $(flags) -c http/HTTPParser.cpp
 
-Channel.o: Channel.cpp
-	g++ $(flags) -c Channel.cpp
+Channel.o: http/Channel.cpp
+	g++ $(flags) -c http/Channel.cpp
 
-Acceptor.o: Acceptor.cpp
-	g++ $(flags) -c Acceptor.cpp
+Acceptor.o: http/Acceptor.cpp
+	g++ $(flags) -c http/Acceptor.cpp
 
-IOManager.o: IOManager.cpp
-	g++ $(flags) -c IOManager.cpp
+IOManager.o: http/IOManager.cpp
+	g++ $(flags) -c http/IOManager.cpp
 
-Poller.o: Poller.cpp
-	g++ $(flags) -c Poller.cpp
+Poller.o: http/Poller.cpp
+	g++ $(flags) -c http/Poller.cpp
 
-ThreadPool.o: ThreadPool.cpp
-	g++ $(flags) -c ThreadPool.cpp
+ThreadPool.o: base/ThreadPool.cpp
+	g++ $(flags) -c base/ThreadPool.cpp
 
-Timer.o: Timer.cpp
-	g++ $(flags) -c Timer.cpp
+Timer.o: base/Timer.cpp
+	g++ $(flags) -c base/Timer.cpp
 
-TimeStamp.o: TimeStamp.cpp
-	g++ $(flags) -c TimeStamp.cpp
+TimeStamp.o: base/TimeStamp.cpp
+	g++ $(flags) -c base/TimeStamp.cpp
 
-Logger.o: Logger.cpp
-	g++ $(flags) -c Logger.cpp
+Logger.o: base/Logger.cpp
+	g++ $(flags) -c base/Logger.cpp
 
-RJson.o: RJson.cpp
-	g++ $(flags) -c RJson.cpp
+RJson.o: base/RJson.cpp
+	g++ $(flags) -c base/RJson.cpp
 
-Utils.o: Utils.cpp
-	g++ $(flags) -c Utils.cpp
+Utils.o: base/Utils.cpp
+	g++ $(flags) -c base/Utils.cpp
 
 .PHONY: clean
 

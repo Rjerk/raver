@@ -1,8 +1,8 @@
 #ifndef HTTP_CONNECTION_H
 #define HTTP_CONNECTION_H
 
-#include "noncopyable.h"
-#include "Buffer.h"
+#include "../base/noncopyable.h"
+#include "../base/Buffer.h"
 #include "HTTPRequest.h"
 #include "HTTPResponse.h"
 #include "HTTPParser.h"

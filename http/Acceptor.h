@@ -1,7 +1,7 @@
 #ifndef ACCEPTOR_H
 #define ACCEPTOR_H
 
-#include "noncopyable.h"
+#include "../base/noncopyable.h"
 #include <functional>
 
 namespace raver {

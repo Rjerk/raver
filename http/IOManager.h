@@ -1,8 +1,8 @@
 #ifndef IO_MANAGER_H
 #define IO_MANAGER_H
 
-#include "ThreadPool.h"
-#include "TimeStamp.h"
+#include "../base/ThreadPool.h"
+#include "../base/TimeStamp.h"
 #include <map>
 
 namespace raver {
