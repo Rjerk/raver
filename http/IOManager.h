@@ -33,9 +33,9 @@ public:
 
     bool stopped() const;
 private:
-    ThreadPool* pool_;
-    Poller* poller_;
-    Channel* channel_;
+    std::unique_ptr<ThreadPool> pool_; // own it.
+    std::unique_ptr<Poller> poller_; // own it.
+    Channel* channel_; // a list of channel, own it.
     bool polling_;
     bool stopped_;
 

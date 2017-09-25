@@ -5,15 +5,15 @@
 
 #include <functional>
 #include <string>
+#include <vector>
 
 namespace raver {
 
 class ServiceManager;
 class IOManager;
-class HTTPClientConnection;
 class HTTPRespond;
+class HTTPConnection;
 
-using ConnectCallback = std::function<void (HTTPClientConnection*)>;
 using RespondCallback = std::function<void (HTTPRespond* )>;
 
 class HTTPService : noncopyable {
@@ -24,17 +24,14 @@ public:
 
     void stop(); // tell manager I'm done.
 
-    //void asyncConnect(const std::string& host, int port, const ConnectCallback& cb);
-
-    //void connect(const std::string& host, int port, HTTPClientConnection** conn);
-
     IOManager* ioManager() const;
 private:
     void afterAccept(int port);
 
 private:
-    ServiceManager* manager_;
+    ServiceManager* manager_; // not own it.
 
+    std::vector<HTTPConnection*> connections_;
 };
 
 }

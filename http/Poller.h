@@ -2,6 +2,7 @@
 #define POLLER_H
 
 #include "../base/noncopyable.h"
+#include <memory>
 
 namespace raver {
 
@@ -29,7 +30,7 @@ public:
 
 private:
     struct InternalPoller;
-    InternalPoller* poller_;
+    std::unique_ptr<InternalPoller> poller_;
 };
 
 

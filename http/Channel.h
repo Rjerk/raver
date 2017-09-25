@@ -29,21 +29,19 @@ public:
     int fd() const { return fd_; }
 private:
     // used by IOManager,
-    Channel(IOManager* io, int fd,
-            const Callback& readcb,
-            const Callback& writecb);
+    Channel(IOManager* io, int fd, const Callback& readcb, const Callback& writecb);
     ~Channel();
 
     ThreadPool* getPool();
 
 private:
     int fd_;
-    IOManager* io_;
+    IOManager* io_; // not own it.
     bool closed_fd_;
     Callback readcb_;
     Callback writecb_;
     std::mutex mtx_;
-    Channel* next_;
+    Channel* next_; // not own it.
     bool can_read_;
     bool can_write_;
     bool waiting_read_;

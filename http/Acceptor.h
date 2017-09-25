@@ -3,6 +3,7 @@
 
 #include "../base/noncopyable.h"
 #include <functional>
+#include <memory>
 
 namespace raver {
 
@@ -26,8 +27,8 @@ private:
 
 private:
     int listenfd_;
-    IOManager* manager_;
-    Channel* channel_;
+    std::unique_ptr<IOManager> manager_;
+    Channel* channel_; // not own it.
     AcceptorCallback accept_cb_;
 };
 

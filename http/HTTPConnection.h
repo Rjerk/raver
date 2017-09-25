@@ -33,10 +33,10 @@ private:
 
     void close();
 private:
-    HTTPService* service_;
+    HTTPService* service_; // not own it.
     int connfd_;
-    bool done = false;
-    Channel* channel_;
+    bool done;
+    Channel* channel_; // not own it.
 
     Buffer in_;
     Buffer out_;

@@ -22,7 +22,6 @@ void Channel::readWhenReady()
     }
 }
 
-
 // if socket wants to be read.
 void Channel::readIfWaiting()
 {
@@ -69,7 +68,7 @@ Channel::~Channel()
 
 ThreadPool* Channel::getPool()
 {
-    return io_->pool_;
+    return io_->pool_.get();
 }
 
 }

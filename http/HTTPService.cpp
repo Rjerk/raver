@@ -15,6 +15,9 @@ HTTPService::HTTPService(int port, ServiceManager* sm)
 HTTPService::~HTTPService()
 {
     LOG_DEBUG << "HTTPService dtor";
+    for (auto conn : connections_) {
+        delete conn;
+    }
 }
 
 void HTTPService::stop()
@@ -34,7 +37,8 @@ void HTTPService::afterAccept(int connfd)
         return ;
     }
 
-    HTTPConnection* conn = new HTTPConnection(this, connfd); (void) conn;
+    HTTPConnection* conn = new HTTPConnection(this, connfd);
+    connections_.push_back(conn);
 }
 
 IOManager* HTTPService::ioManager() const

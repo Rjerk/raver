@@ -1,8 +1,8 @@
 #include "IOManager.h"
 #include "Poller.h"
+#include "Channel.h"
 #include "../base/ThreadPool.h"
 #include "../base/TimeStamp.h"
-#include "Channel.h"
 #include "../base/Logger.h"
 
 #include <signal.h>

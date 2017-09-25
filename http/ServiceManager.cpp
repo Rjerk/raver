@@ -18,7 +18,6 @@ ServiceManager::~ServiceManager()
     for (auto ac : acceptors_) {
         delete ac;
     }
-    delete io_;
 }
 
 void ServiceManager::run()
@@ -27,6 +26,7 @@ void ServiceManager::run()
         LOG_DEBUG << "ac->startAccept()";
         ac->startAccept();
     }
+
     io_->poll();
 
     {
@@ -55,7 +55,7 @@ void ServiceManager::stop()
 
 void ServiceManager::registerAcceptor(int port, AcceptorCallback cb)
 {
-    acceptors_.push_back(new Acceptor(io_, port, cb));
+    acceptors_.push_back(new Acceptor(io_.get(), port, cb));
 }
 
 }

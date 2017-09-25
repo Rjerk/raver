@@ -28,7 +28,7 @@ Acceptor::Acceptor(IOManager* manager, int port, const AcceptorCallback& cb)
     wrapper::bindOrDie(listenfd_, (struct sockaddr*) &servaddr);
     wrapper::listenOrDie(listenfd_);
 
-    channel_ = manager_->newChannel(listenfd_, std::bind(&Acceptor::doAccept, this),
+    channel_ = manager_.get()->newChannel(listenfd_, std::bind(&Acceptor::doAccept, this),
                                                std::bind(&Acceptor::doNothing, this));
 }
 
@@ -50,7 +50,6 @@ void Acceptor::close()
     if (channel_) {
         manager_->removeChannel(channel_);
     }
-    channel_ = nullptr;
 }
 
 void Acceptor::doAccept()

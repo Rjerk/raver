@@ -29,7 +29,6 @@ Poller::~Poller()
     if (poller_->fd_ >= 0) {
         ::close(poller_->fd_);
     }
-    delete poller_;
 }
 
 void Poller::create()

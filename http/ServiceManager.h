@@ -4,6 +4,7 @@
 #include <vector>
 #include <mutex>
 #include <condition_variable>
+
 #include "Acceptor.h"
 
 namespace raver {
@@ -24,15 +25,15 @@ public:
 
     void registerAcceptor(int port, AcceptorCallback cb);
 
-    bool isStopped() { return stopped_; }
-    IOManager* ioManager() { return io_; }
+    bool isStopped() const { return stopped_; }
+    IOManager* ioManager() const { return io_.get(); }
 private:
     using Acceptors = std::vector<Acceptor*>;
     const int num_thread_;
     bool stop_requested_;
     bool stopped_;
     Acceptors acceptors_;
-    IOManager* io_;
+    std::unique_ptr<IOManager> io_;
     std::mutex mtx_;
     std::condition_variable cv_;
 };

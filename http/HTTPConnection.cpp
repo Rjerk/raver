@@ -33,7 +33,7 @@ void defaultHTTPCallback(const HTTPRequest&, HTTPResponse* resp)
 
 void handleHTTPCallback(const HTTPRequest& request, HTTPResponse* resp)
 {
-    LOG_INFO << "wtf";
+    LOG_INFO << "handleHTTPCallback";
     if (request.getMethod() != HTTPRequest::Method::Get
         && request.getMethod() != HTTPRequest::Method::Post) {
         LOG_INFO << "use default";
@@ -87,7 +87,7 @@ void handleHTTPCallback(const HTTPRequest& request, HTTPResponse* resp)
 }
 
 HTTPConnection::HTTPConnection(HTTPService* service, int connfd)
-    : service_(service), connfd_(connfd), channel_(nullptr),
+    : service_(service), connfd_(connfd), done(false), channel_(nullptr),
       in_(), out_(), request_(), response_(false), parser_(), cb_(handleHTTPCallback)
 {
     LOG_INFO << "HTTPConnection ctor";
@@ -98,12 +98,11 @@ HTTPConnection::HTTPConnection(HTTPService* service, int connfd)
 
 HTTPConnection::~HTTPConnection()
 {
-    LOG_DEBUG << "HTTPConnection dtor";
+    LOG_DEBUG << "HTTPConnection dtor" << this;
     if (service_) {
         service_->ioManager()->removeChannel(channel_);
     }
     close();
-    delete this;
 }
 
 void HTTPConnection::close()
