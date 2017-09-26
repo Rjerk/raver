@@ -38,7 +38,10 @@ void HTTPService::afterAccept(int connfd)
     }
 
     HTTPConnection* conn = new HTTPConnection(this, connfd);
-    connections_.push_back(conn);
+    {
+        MutexGuard guard(mtx_vec_);
+        connections_.push_back(conn);
+    }
 }
 
 IOManager* HTTPService::ioManager() const

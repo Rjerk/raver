@@ -6,6 +6,7 @@
 #include <functional>
 #include <string>
 #include <vector>
+#include <mutex>
 
 namespace raver {
 
@@ -15,6 +16,7 @@ class HTTPRespond;
 class HTTPConnection;
 
 using RespondCallback = std::function<void (HTTPRespond* )>;
+using MutexGuard = std::lock_guard<std::mutex>;
 
 class HTTPService : noncopyable {
 public:
@@ -32,6 +34,7 @@ private:
     ServiceManager* manager_; // not own it.
 
     std::vector<HTTPConnection*> connections_;
+    std::mutex mtx_vec_;
 };
 
 }
