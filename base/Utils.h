@@ -24,6 +24,8 @@ void close(int sockfd);
 
 void setNonBlockAndCloseOnExec(int sockfd);
 
+void setKeepAlive(int sockfd, bool on);
+
 int epoll_create(int size);
 
 int epoll_wait(int epfd, struct epoll_event* events, int maxevents, int timeout);

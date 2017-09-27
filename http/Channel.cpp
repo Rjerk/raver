@@ -4,49 +4,14 @@
 
 namespace raver {
 
-// if socket can be read.
-void Channel::readWhenReady()
-{
-    bool ready = false;
-    {
-        MutexGuard guard(mtx_);
-        if (can_read_) {
-            ready = true;
-            can_read_ = false;
-        } else {
-            waiting_read_ = true;
-        }
-    }
-    if (ready) {
-        getPool()->addTask(readcb_);
-    }
-}
-
 // if socket wants to be read.
-void Channel::readIfWaiting()
+void Channel::read()
 {
-    bool ready = false;
-    {
-        MutexGuard guard(mtx_);
-        if (waiting_read_) {
-            ready = true;
-            waiting_read_ = false;
-        } else {
-            can_read_ = true;
-        }
-    }
-    if (ready) {
-        getPool()->addTask(readcb_);
-    }
+    getPool()->addTask(readcb_);
 }
 
 // if socket can be writed.
-void Channel::writeWhenReady()
-{
-    getPool()->addTask(writecb_);
-}
-
-void Channel::writeIfWaiting()
+void Channel::write()
 {
     getPool()->addTask(writecb_);
 }
@@ -60,6 +25,7 @@ Channel::Channel(IOManager* io, int fd,
 {
     LOG_INFO << "Channel ctor";
     wrapper::setNonBlockAndCloseOnExec(fd_);
+    wrapper::setKeepAlive(fd_, true);
 }
 
 Channel::~Channel()

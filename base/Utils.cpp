@@ -33,6 +33,15 @@ void setNonBlockAndCloseOnExec(int sockfd)
     }
 }
 
+void setKeepAlive(int sockfd, bool on)
+{
+    int opt = on ? 1 : 0;
+    if (::setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, &opt,
+            static_cast<socklen_t>(sizeof(opt))) < 0) {
+        LOG_ERROR << "setsockopt error";
+    }
+}
+
 void connect(int sockfd, const struct sockaddr* addr)
 {
     if (::connect(sockfd, addr,

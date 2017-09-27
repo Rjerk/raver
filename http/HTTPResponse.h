@@ -33,6 +33,9 @@ public:
     { body_ = body; }
 
     void appendToBuffer(Buffer* out);
+
+    bool closeConnectionOrNot() const
+    { return close_connection_; }
 private:
 
     HTTPStatusCode status_code_;

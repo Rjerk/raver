@@ -22,10 +22,12 @@ ServiceManager::~ServiceManager()
 
 void ServiceManager::run()
 {
+    /*
     for (auto ac : acceptors_) {
         LOG_DEBUG << "ac->startAccept()";
         ac->startAccept();
     }
+    */
 
     io_->poll();
 

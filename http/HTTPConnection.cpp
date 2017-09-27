@@ -79,7 +79,7 @@ void handleHTTPCallback(const HTTPRequest& request, HTTPResponse* resp)
     } else {
         resp->setStatusCode(HTTPResponse::HTTPStatusCode::OK200);
         resp->setStatusMessage("OK");
-        resp->setCloseConnection(true);
+        resp->setCloseConnection(false);
         resp->setBody(readFile(path.c_str()));
     }
 }
@@ -93,7 +93,7 @@ HTTPConnection::HTTPConnection(HTTPService* service, int connfd)
     LOG_INFO << "HTTPConnection ctor";
     channel_ = service_->ioManager()->newChannel(connfd, std::bind(&HTTPConnection::doRead, this),
                                                          std::bind(&HTTPConnection::doWrite, this));
-    startRead();
+    channel_->read();
 }
 
 HTTPConnection::~HTTPConnection()
@@ -115,40 +115,37 @@ void HTTPConnection::close()
 void HTTPConnection::startRead()
 {
     // we get a new connection, so socket can be read.
-    channel_->readWhenReady();
+    channel_->read();
 }
 
 void HTTPConnection::doRead()
 {
-    for ( ; ; ) {
-        int n = ::read(connfd_, in_.beginWrite(), in_.writableBytes());
-        if (n > 0) {
-            LOG_INFO << "read : " << in_.beginWrite();
-            in_.hasWriten(n);
-        }
+    int saved_errno;
+    ssize_t n = in_.readFd(connfd_, &saved_errno);
+    LOG_INFO << "--------size-------------: " << in_.size();
 
-        if (n < 0 && errno == EAGAIN) {
-            LOG_ERROR << "EAGAIN in read.";
-            channel_->readWhenReady();
-            break;
-        } else if (n < 0) {
-            LOG_ERROR << "n < 0 in read.";
-            break;
-        } else if (n == 0) {
-            LOG_WARN << "n == 0 in read.";
-            break;
-        } else if (!parseRequestOK()) {
-            LOG_ERROR << "parse request failed.";
-            break;
-        }
+    if (n == 0) {
+        LOG_INFO << "n == 0";
+        return ;
+    } else if (n < 0) {
+        errno = saved_errno;
+        LOG_SYSERR << "doRead: n < 0";
+        return ;
     }
+
+    if (!handleRequest()) {
+        LOG_ERROR << "handle request failed.";
+        return ;
+    }
+
+    LOG_DEBUG << "handle request ok.";
 }
 
 void HTTPConnection::doWrite()
 {
     for ( ; ; ) {
+        LOG_INFO << "out_size: ----------------- " << out_.size();
         ssize_t n = ::write(connfd_, out_.beginRead(), out_.readableBytes());
-        LOG_INFO << "www: " << out_.beginRead();
         if (n > 0) {
             LOG_INFO << "write: " << out_.beginRead();
             out_.retrieve(n);
@@ -156,8 +153,7 @@ void HTTPConnection::doWrite()
                 break;
             }
         } else if (n == -1 && errno == EAGAIN) {
-            LOG_DEBUG << "get eagain.";
-            channel_->writeWhenReady();
+            LOG_INFO << "get eagain.";
             break;
         } else if (n == -1) { // other error.
             LOG_ERROR << "write error." << strerror(errno);
@@ -166,33 +162,32 @@ void HTTPConnection::doWrite()
             LOG_ERROR << "n == 0 in write.";
             break;
         }
-
     }
     // shutdown after send respond.
-    close();
+    LOG_INFO << "we close the connection after send response.";
+    if (response_.closeConnectionOrNot()) {
+        close();
+    }
 }
 
 bool HTTPConnection::parseRequestOK()
 {
     request_.clear();
-    for ( ; ; ) {
-        bool ret = parser_.parseRequest(&in_, &request_);
-
-        if (!ret) { // send 404 bad request.
-            LOG_ERROR << "Parse HTTP request error.";
-            return false;
-        }
-
-        if (!handleRequest()) {
-            return false;
-        } else {
-            return true;
-        }
+    bool ret = parser_.parseRequest(&in_, &request_);
+    if (!ret) { // send 404 bad request.
+        LOG_ERROR << "Parse HTTP request error.";
+        return false;
     }
+    LOG_DEBUG << "parse request ok.";
+    return true;
 }
 
 bool HTTPConnection::handleRequest()
 {
+    if (!parseRequestOK()) {
+        LOG_ERROR << "parse request failed.";
+        return false;
+    }
     if (parser_.gotAll()) {
         const std::string& connection = request_.getHeader("Connection");
         LOG_INFO << "connection: " << connection;
@@ -200,7 +195,6 @@ bool HTTPConnection::handleRequest()
                 || (request_.getVersion() == HTTPRequest::Version::HTTP10
                     && connection != "keep-alive");
         cb_(request_, &response_);
-        LOG_INFO << "callback_ok";
         response_.setCloseConnection(close_req);
         response_.appendToBuffer(&out_); // write respond to output buffer.
         return true;

@@ -41,7 +41,7 @@ Acceptor::~Acceptor()
 
 void Acceptor::startAccept()
 {
-    channel_->readWhenReady();
+    channel_->read();
 }
 
 void Acceptor::close()
@@ -54,18 +54,18 @@ void Acceptor::close()
 
 void Acceptor::doAccept()
 {
-    for ( ; ; ) {
+    //for ( ; ; ) {
         struct sockaddr_in clntaddr;
         socklen_t len = sizeof(clntaddr);
         int connfd = ::accept(listenfd_, (struct sockaddr *) &clntaddr, &len);
         if (connfd < 0 && errno == EAGAIN) {
-            LOG_DEBUG << "accept EAGAIN" << strerror(errno);
-            channel_->readWhenReady();
-            break;
+            LOG_INFO << "accept EAGAIN" << strerror(errno);
+            //channel_->readWhenReady();
+    //        break;
         }
         LOG_INFO << "got a new connection.";
         accept_cb_(connfd);
-    }
+    //}
 }
 
 }

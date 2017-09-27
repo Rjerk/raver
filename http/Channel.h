@@ -15,11 +15,9 @@ using MutexGuard = std::lock_guard<std::mutex>;
 class Channel {
     friend class IOManager;
 public:
-    void readWhenReady();
-    void readIfWaiting();
+    void read();
 
-    void writeWhenReady();
-    void writeIfWaiting();
+    void write();
 
     void setReadCallback(const Callback& readcb) { readcb_ = readcb; }
     void setReadCallback(Callback&& readcb) { readcb_ = std::move(readcb); }
