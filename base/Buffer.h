@@ -5,6 +5,9 @@
 #include <cstring>
 #include <vector>
 #include <algorithm>
+#include <sys/uio.h>
+
+#include "Logger.h"
 
 namespace raver {
 
@@ -18,6 +21,9 @@ public:
         : buffer_(sz), reader_index_(0), writer_index_(0)
     {
     }
+
+    size_t size() const
+    { return buffer_.size(); }
 
     size_t readableBytes() const
     { return writer_index_ - reader_index_; }
@@ -92,6 +98,28 @@ public:
     {
         const char* crlf = std::search(begin()+reader_index_, beginWrite(), CRLF, CRLF+2);
         return crlf == beginWrite() ? nullptr : crlf;
+    }
+
+    ssize_t readFd(int fd, int* saved_errno)
+    {
+        char extrabuf[65536];
+        struct iovec vec[2];
+        size_t writable = writableBytes();
+        vec[0].iov_base = beginWrite();
+        vec[0].iov_len = writable;
+        vec[1].iov_base = extrabuf;
+        vec[1].iov_len = sizeof(extrabuf);
+        auto iovcount = (writable < sizeof(extrabuf)) ? 2 : 1;
+        auto n = ::readv(fd, vec, iovcount);
+        if (n < 0) {
+            *saved_errno = errno;
+        } else if ((size_t)n <= writable) {
+            writer_index_ += n;
+        } else { // n > writable
+            writer_index_ = buffer_.size();
+            append(extrabuf, n - writable);
+        }
+        return n;
     }
 
 private:
