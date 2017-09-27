@@ -6,7 +6,7 @@
 
 int main(/*int argc, char** argv*/)
 {
-    logging::Logger::setLevel(logging::Logger::LogLevel::Debug);
+    logging::Logger::setLevel(logging::Logger::LogLevel::Info);
 
     rjson::RJSON parser(readFile("config.json"));
     auto ret = parser.parseJson(); (void)ret;

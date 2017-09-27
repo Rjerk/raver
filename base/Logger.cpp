@@ -20,7 +20,7 @@ std::string getTimeStr()
 {
     std::time_t t;
     std::time(&t);
-    std::string str = std::ctime(&t);
+    std::string str{std::ctime(&t)};
     str.erase(str.size()-1);
     return str;
 }

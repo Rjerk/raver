@@ -84,12 +84,12 @@ void IOManager::poll()
             Channel* ch = nullptr;
             poller_->getEvent(i, &event_flags, &ch);
             if (event_flags & (Poller::PollEvent::READ | Poller::PollEvent::ERROR)) {
-                LOG_DEBUG << "got readable event";
-                ch->readIfWaiting();
+                LOG_INFO << "got readable event";
+                ch->read();
             }
             if (event_flags & (Poller::PollEvent::WRITE | Poller::PollEvent::ERROR)) {
-                LOG_DEBUG << "got writable event";
-                ch->writeIfWaiting();
+                LOG_INFO << "got writable event";
+                ch->write();
             }
         }
 
