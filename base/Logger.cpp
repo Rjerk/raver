@@ -2,18 +2,19 @@
 #include <iostream>
 #include <ctime>
 #include <utility>
+#include <cstring>
 
 namespace logging {
 
 Logger::LogLevel DEFAULT_LEVEL = Logger::Trace;
 
-typename Logger::LogLevel Logger::level_limit_ = DEFAULT_LEVEL;
+Logger::LogLevel g_loglevel = DEFAULT_LEVEL;
 
 typename Logger::OutputCallback Logger::output_callback_ = [](std::string msg) {
     std::cout << msg << std::endl;
 };
 
-const char* level_string[] = { "Trace", "Debug", "Info", "Warn", "Error", "Fatal" };
+const char* level_string[] = { "Trace", "Debug", "Info ", "Warn ", "Error", "Fatal" };
 
 std::string getTimeStr()
 {
@@ -24,21 +25,30 @@ std::string getTimeStr()
     return str;
 }
 
-Logger::Logger(const char* filename, int line, const char* func_name, LogLevel level)
+Logger::Logger(const char* filename, int line, const char* func_name,
+               int errornum, LogLevel level)
+    : level_(level)
 {
-    setLevel(level);
     sstream_ << "[";
-    sstream_ << level_string[level];
+    sstream_ << level_string[level_];
     sstream_ << "]";
     sstream_ << getTimeStr() << " ";
     sstream_ << filename << " ";
     sstream_ << "(" << line << ") ";
     sstream_ << func_name << " ";
     sstream_ << ": ";
+    if (errornum != 0) {
+        sstream_ << ::strerror(errornum);
+    }
 }
 
-Logger::Logger(const char* filename, int line, const char* func_name, bool to_abort)
-    : Logger(filename, line, func_name, to_abort ? Fatal : Error)
+Logger::Logger(const char* filename, int line, LogLevel level)
+    : Logger(filename, line, "", 0, level)
+{
+}
+
+Logger::Logger(const char* filename, int line, bool to_abort)
+    : Logger(filename, line, "", errno, to_abort ? Fatal : Error)
 {
 }
 
@@ -47,27 +57,22 @@ Logger::~Logger()
     if (output_callback_) {
         std::string str = sstream_.str();
         sstream_.flush();
-        output_callback_(std::move(str));
+        output_callback_(str);
     }
-    if (level_limit_ == Fatal) {
+    if (level_ == Fatal) {
         sstream_.flush();
         ::abort();
     }
 }
 
-Logger::LogLevel Logger::logLevel()
-{
-    return Logger::level_limit_;
-}
-
 void Logger::setLevel(Logger::LogLevel level)
 {
-    Logger::level_limit_ = level;
+    g_loglevel = level;
 }
 
-void Logger::setOutput(OutputCallback cb)
+void Logger::setOutputCallback(OutputCallback cb)
 {
-    Logger::output_callback_ = std::move(cb);
+    output_callback_ = cb;
 }
 
 std::stringstream& Logger::stream()
