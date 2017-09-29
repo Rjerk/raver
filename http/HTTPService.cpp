@@ -9,12 +9,12 @@ HTTPService::HTTPService(int port, ServiceManager* sm)
     : manager_(sm)
 {
     manager_->registerAcceptor(port, std::bind(&HTTPService::afterAccept, this, std::placeholders::_1));
-    LOG_INFO << "HTTPService ctor";
+    LOG_TRACE << "HTTPService ctor";
 }
 
 HTTPService::~HTTPService()
 {
-    LOG_DEBUG << "HTTPService dtor";
+    LOG_TRACE << "HTTPService dtor";
     for (auto conn : connections_) {
         delete conn;
     }

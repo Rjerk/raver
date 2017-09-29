@@ -30,13 +30,13 @@ IOManager::IOManager(int num_thread)
       polling_(false),
       stopped_(false)
 {
-    LOG_DEBUG << "IOManager ctor";
+    LOG_TRACE << "IOManager ctor";
     poller_->create();
 }
 
 IOManager::~IOManager()
 {
-    LOG_DEBUG << "IOManager dtor";
+    LOG_TRACE << "IOManager dtor";
     stop();
 }
 
@@ -62,7 +62,7 @@ void IOManager::poll()
         // got events.
         int nready = poller_->poll();
 
-        {
+        /*{ TODO: timer task.
             MutexGuard guard(mtx_timer_queue_);
             TimeStamp::Ticks now = TimeStamp::getTicks();
 
@@ -76,19 +76,19 @@ void IOManager::poll()
                     timer_queue_.erase(to_execute++);
                 }
             }
-        }
+        }*/
 
         int event_flags;
         for (int i = 0; i < nready; ++i) {
-            LOG_DEBUG << "events num: " << nready;
+            LOG_TRACE << "events num: " << nready;
             Channel* ch = nullptr;
             poller_->getEvent(i, &event_flags, &ch);
             if (event_flags & (Poller::PollEvent::READ | Poller::PollEvent::ERROR)) {
-                LOG_INFO << "got readable event";
+                LOG_TRACE << "got readable event";
                 ch->read();
             }
             if (event_flags & (Poller::PollEvent::WRITE | Poller::PollEvent::ERROR)) {
-                LOG_INFO << "got writable event";
+                LOG_TRACE << "got writable event";
                 ch->write();
             }
         }

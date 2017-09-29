@@ -4,17 +4,14 @@
 #include <utility>
 #include <cstring>
 
-namespace logging {
+namespace raver {
+
+namespace detail {
 
 Logger::LogLevel DEFAULT_LEVEL = Logger::Trace;
 
-Logger::LogLevel g_loglevel = DEFAULT_LEVEL;
-
-typename Logger::OutputCallback Logger::output_callback_ = [](std::string msg) {
-    std::cout << msg << std::endl;
-};
-
-const char* level_string[] = { "Trace", "Debug", "Info ", "Warn ", "Error", "Fatal" };
+static const char* level_string[Logger::ENUM_LEVEL_NUM] =
+            { "Trace", "Debug", "Info ", "Warn ", "Error", "Fatal" };
 
 std::string getTimeStr()
 {
@@ -25,14 +22,22 @@ std::string getTimeStr()
     return str;
 }
 
+}
+
+Logger::LogLevel g_loglevel = detail::DEFAULT_LEVEL;
+
+typename Logger::OutputCallback Logger::output_callback_ = [](std::string msg) {
+    std::cout << msg << std::endl;
+};
+
 Logger::Logger(const char* filename, int line, const char* func_name,
                int errornum, LogLevel level)
     : level_(level)
 {
     sstream_ << "[";
-    sstream_ << level_string[level_];
+    sstream_ << detail::level_string[level_];
     sstream_ << "]";
-    sstream_ << getTimeStr() << " ";
+    sstream_ << detail::getTimeStr() << " ";
     sstream_ << filename << " ";
     sstream_ << "(" << line << ") ";
     sstream_ << func_name << " ";
@@ -40,6 +45,7 @@ Logger::Logger(const char* filename, int line, const char* func_name,
     if (errornum != 0) {
         sstream_ << ::strerror(errornum);
     }
+    sstream_ << " ";
 }
 
 Logger::Logger(const char* filename, int line, LogLevel level)

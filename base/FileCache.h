@@ -5,7 +5,7 @@
 #include <list>
 #include "RWMutex.h"
 
-namespace base {
+namespace raver {
 
 class Buffer;
 

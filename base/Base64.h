@@ -4,7 +4,7 @@
 #include "noncopyable.h"
 #include <string>
 
-namespace base {
+namespace raver {
 
 std::string base64Decode(const std::string& src);
 

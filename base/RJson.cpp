@@ -19,7 +19,7 @@ string readFile(const char* filename)
 	return buffer.str();
 }
 
-namespace {
+namespace detail {
 
 bool isdigit_1to9(char ch)
 {
@@ -113,14 +113,14 @@ JsonValue* JsonValue::getValueFromObject(const string& key)
 }
 
 RJSON::RJSON(const string& json)
-	: json_text_(json), json_(json_text_.data()), value_(), stack_(new char[STACK_INIT_SIZE]),
-	  top_(0), size_(STACK_INIT_SIZE)
+	: json_text_(json), json_(json_text_.data()), value_(), stack_(new char[detail::STACK_INIT_SIZE]),
+	  top_(0), size_(detail::STACK_INIT_SIZE)
 {
 }
 
 RJSON::~RJSON()
 {
-    freeValue(&value_);
+    detail::freeValue(&value_);
 	delete [] stack_;
 }
 
@@ -141,11 +141,11 @@ void RJSON::setJsonText(const string& js)
 {
     json_text_.assign(js);
     json_ = json_text_.data();
-    freeValue(&value_);
+    detail::freeValue(&value_);
     delete [] stack_;
-    stack_ = new char[STACK_INIT_SIZE];
+    stack_ = new char[detail::STACK_INIT_SIZE];
     top_ = 0;
-    size_ = STACK_INIT_SIZE;
+    size_ = detail::STACK_INIT_SIZE;
 }
 
 parse_code RJSON::parseValue(json_value_t* v)
@@ -188,7 +188,7 @@ parse_code RJSON::parseNumber(json_value_t* v)
 	if (*p == '0') {
 		++p;
 	} else {
-		if (!isdigit_1to9(*p)) {
+		if (!detail::isdigit_1to9(*p)) {
 			return PARSE_INVALID_VALUE;
 		}
 		while (isdigit(*p)) {
@@ -318,7 +318,7 @@ parse_code RJSON::parseStringRaw(char** str, size_t* len)
 void RJSON::setString(json_value_t* v, const char* str, size_t len)
 {
 	assert(v != nullptr && (str != NULL || len == 0));
-	freeValue(v);
+    detail::freeValue(v);
     v->str_ = new string(str, len);
     v->type_ = RJSON_STRING;
 }
@@ -437,7 +437,7 @@ parse_code RJSON::parseObject(json_value_t* v)
 	for (size_t i = 0; i < sz; ++i) {
 		auto p = (json_pair_t *) popJson(sizeof(json_pair_t)); (void) p;
 		delete p->str_;
-        freeValue(&(p->value_));
+        detail::freeValue(&(p->value_));
 	}
 
     v->type_ = RJSON_NULL;
@@ -488,7 +488,7 @@ parse_code RJSON::parseArray(json_value_t* v)
 
 
 	for (size_t i = 0; i < sz; ++i) {
-		freeValue((json_value_t *) popJson(sizeof(json_value_t)));
+        detail::freeValue((json_value_t *) popJson(sizeof(json_value_t)));
 	}
 
     v->type_ = RJSON_NULL;

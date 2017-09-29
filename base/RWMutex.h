@@ -4,7 +4,7 @@
 #include "noncopyable.h"
 #include <pthread.h>
 
-namespace base {
+namespace raver {
 
 class RWMutex : noncopyable {
 public:

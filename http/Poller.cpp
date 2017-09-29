@@ -1,31 +1,33 @@
 #include "Poller.h"
 #include "../base/Logger.h"
+#include "../base/Utils.h"
 #include <sys/epoll.h>
 #include <unistd.h>
 
 namespace raver {
 
-namespace {
+namespace detail {
 
-static constexpr int MAX_FDS_PER_POLL = 1024;
+constexpr int MAX_FDS_PER_POLL = 1024;
 
 }
+
 struct Poller::InternalPoller {
     InternalPoller(): fd_(-1) { }
 
     int fd_;
-    struct epoll_event events_[MAX_FDS_PER_POLL];
+    struct epoll_event events_[detail::MAX_FDS_PER_POLL];
 };
 
 Poller::Poller()
     : poller_(new InternalPoller())
 {
-    LOG_DEBUG << "Poller ctor";
+    LOG_TRACE << "Poller ctor";
 }
 
 Poller::~Poller()
 {
-    LOG_DEBUG << "Poller dtor";
+    LOG_TRACE << "Poller dtor";
     if (poller_->fd_ >= 0) {
         ::close(poller_->fd_);
     }
@@ -33,9 +35,8 @@ Poller::~Poller()
 
 void Poller::create()
 {
-    if ((poller_->fd_ = ::epoll_create(MAX_FDS_PER_POLL)) < 0) {
-        LOG_ERROR << "epoll_create";
-    }
+    // FIXME: epoll_create1(EPOLL_CLOEXEC)
+    poller_->fd_ = wrapper::epoll_create(detail::MAX_FDS_PER_POLL);
 }
 
 int Poller::poll()
@@ -43,13 +44,12 @@ int Poller::poll()
     int ret;
     for ( ; ; ) {
         if ((ret = ::epoll_wait(poller_->fd_, poller_->events_,
-                         MAX_FDS_PER_POLL, 100)) >= 0) {
+                         detail::MAX_FDS_PER_POLL, 100)) >= 0) {
             break; // got event.
         } else if (errno == EINTR) {
             continue;
         } else {
-            LOG_ERROR << "epoll_wait";
-            exit(1);
+            LOG_SYSFATAL << "epoll_wait";
         }
     }
     return ret;
@@ -62,7 +62,7 @@ void Poller::setEvent(int fd, Channel* data)
                 EPOLLERR | EPOLLHUP | EPOLLET;
     ev.data.ptr = reinterpret_cast<void*>(data);
     if (::epoll_ctl(poller_->fd_, EPOLL_CTL_ADD, fd, &ev) != 0) {
-        LOG_ERROR << "Cannot add epoll descriptor";
+        LOG_SYSERR << "Cannot add epoll descriptor";
     }
 }
 

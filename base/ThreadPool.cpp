@@ -17,12 +17,12 @@ ThreadPool::ThreadPool(size_t num_thread)
     for (size_t i = 0; i < size_; ++i) {
         threads_.emplace_back(&ThreadPool::worker, this);
     }
-    LOG_INFO << "ThreadPool ctor";
+    LOG_TRACE << "ThreadPool ctor";
 }
 
 ThreadPool::~ThreadPool()
 {
-    LOG_DEBUG << "ThreadPool dtor";
+    LOG_TRACE << "ThreadPool dtor";
     if (!quit_) {
         stop();
     }
@@ -65,7 +65,7 @@ void ThreadPool::worker()
             task = std::move(tasks_.front());
             tasks_.pop();
         }
-        LOG_DEBUG << "task process";
+        LOG_TRACE << "task starts.";
         task(); // process task.
     }
 }

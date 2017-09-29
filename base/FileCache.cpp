@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-namespace base {
+namespace raver {
 
 FileCache::FileCache(size_t maxsize)
     : capacity_(maxsize)

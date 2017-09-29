@@ -1,7 +1,7 @@
 #include "Base64.h"
 #include <map>
 
-namespace base {
+namespace raver {
 
 namespace detail {
 

@@ -26,7 +26,7 @@ public:
 
     int fd() const { return fd_; }
 private:
-    // used by IOManager,
+    // used by IOManager.
     Channel(IOManager* io, int fd, const Callback& readcb, const Callback& writecb);
     ~Channel();
 

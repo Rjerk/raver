@@ -33,10 +33,10 @@ void defaultHTTPCallback(const HTTPRequest&, HTTPResponse* resp)
 
 void handleHTTPCallback(const HTTPRequest& request, HTTPResponse* resp)
 {
-    LOG_INFO << "handleHTTPCallback";
+    LOG_TRACE << "handleHTTPCallback";
     if (request.getMethod() != HTTPRequest::Method::Get
         && request.getMethod() != HTTPRequest::Method::Post) {
-        LOG_INFO << "use default";
+        LOG_TRACE << "use default";
         defaultHTTPCallback(request, resp);
         return ;
     }
@@ -49,34 +49,36 @@ void handleHTTPCallback(const HTTPRequest& request, HTTPResponse* resp)
     rjson::RJSON parser(readFile("config.json"));
     parser.parseJson();
     auto doc_root = *(parser.getValue()->getValueFromObject("doc-root")->getString());
-    LOG_INFO << "root: " << doc_root;
-    LOG_INFO << "req:" << request.getPath();
+    LOG_TRACE << "root: " << doc_root;
+    LOG_TRACE << "req:" << request.getPath();
     auto path = doc_root + request.getPath().substr(1);
-    LOG_INFO << "path2: " << path;
+    LOG_TRACE << "path: " << path;
 
     if (path.at(path.size()-1) == '/') {
         path += *(parser.getValue()->getValueFromObject("index-page")->getString());
     }
-    LOG_INFO << "use path: " << path;
+    LOG_TRACE << "use path: " << path;
 
     struct stat st;
     if (::stat(path.c_str(), &st) == -1) {
-        LOG_INFO << "use default!";
+        LOG_TRACE << "find file failed. use default";
         defaultHTTPCallback(request, resp);
         return ;
     } else {
         if ((st.st_mode & S_IFMT) == S_IFDIR) {
+            LOG_TRACE << "path is a directory";
             path += *(parser.getValue()->getValueFromObject("index-page")->getString());
         }
         if ((st.st_mode & S_IXUSR) || (st.st_mode & S_IXGRP) || (st.st_mode & S_IXOTH)) {
+            LOG_TRACE << "file is executable";
             post = true;
         }
     }
-    LOG_INFO << "path:" << path;
 
     if (post) {
-        //
+        LOG_TRACE << "use POST";
     } else {
+        LOG_TRACE << "use GET";
         resp->setStatusCode(HTTPResponse::HTTPStatusCode::OK200);
         resp->setStatusMessage("OK");
         resp->setCloseConnection(false);
@@ -90,7 +92,7 @@ HTTPConnection::HTTPConnection(HTTPService* service, int connfd)
     : service_(service), connfd_(connfd), done(false), channel_(nullptr),
       in_(), out_(), request_(), response_(false), parser_(), cb_(handleHTTPCallback)
 {
-    LOG_INFO << "HTTPConnection ctor";
+    LOG_TRACE << "HTTPConnection ctor";
     channel_ = service_->ioManager()->newChannel(connfd, std::bind(&HTTPConnection::doRead, this),
                                                          std::bind(&HTTPConnection::doWrite, this));
     channel_->read();
@@ -98,7 +100,7 @@ HTTPConnection::HTTPConnection(HTTPService* service, int connfd)
 
 HTTPConnection::~HTTPConnection()
 {
-    LOG_DEBUG << "HTTPConnection dtor" << this;
+    LOG_TRACE << "HTTPConnection dtor" << this;
     if (service_) {
         service_->ioManager()->removeChannel(channel_);
     }
@@ -122,10 +124,10 @@ void HTTPConnection::doRead()
 {
     int saved_errno;
     ssize_t n = in_.readFd(connfd_, &saved_errno);
-    LOG_INFO << "--------size-------------: " << in_.size();
+    LOG_TRACE << "in_ size: " << in_.size();
 
     if (n == 0) {
-        LOG_INFO << "n == 0";
+        LOG_DEBUG << "in_.readFd: n == 0";
         return ;
     } else if (n < 0) {
         errno = saved_errno;
@@ -138,34 +140,35 @@ void HTTPConnection::doRead()
         return ;
     }
 
-    LOG_DEBUG << "handle request ok.";
+    LOG_TRACE << "handle request ok.";
 }
 
 void HTTPConnection::doWrite()
 {
     for ( ; ; ) {
-        LOG_INFO << "out_size: ----------------- " << out_.size();
+        LOG_TRACE << "out_ size: " << out_.size();
         ssize_t n = ::write(connfd_, out_.beginRead(), out_.readableBytes());
         if (n > 0) {
-            LOG_INFO << "write: " << out_.beginRead();
+            LOG_TRACE << "write " << n << " bytes to connfd_";
             out_.retrieve(n);
             if (out_.readableBytes() == 0) {
                 break;
             }
         } else if (n == -1 && errno == EAGAIN) {
-            LOG_INFO << "get eagain.";
+            LOG_SYSERR << "get eagain.";
             break;
         } else if (n == -1) { // other error.
-            LOG_ERROR << "write error." << strerror(errno);
+            LOG_SYSERR << "write error." << strerror(errno);
             break;
         } else if (n == 0) {
-            LOG_ERROR << "n == 0 in write.";
+            LOG_ERROR << "write: n == 0.";
             break;
         }
     }
-    // shutdown after send respond.
-    LOG_INFO << "we close the connection after send response.";
+
+    // TODO: shutdown after send respond.
     if (response_.closeConnectionOrNot()) {
+        LOG_TRACE << "we close the connection after send response.";
         close();
     }
 }
@@ -178,7 +181,7 @@ bool HTTPConnection::parseRequestOK()
         LOG_ERROR << "Parse HTTP request error.";
         return false;
     }
-    LOG_DEBUG << "parse request ok.";
+    LOG_TRACE << "parse request ok.";
     return true;
 }
 
@@ -190,7 +193,7 @@ bool HTTPConnection::handleRequest()
     }
     if (parser_.gotAll()) {
         const std::string& connection = request_.getHeader("Connection");
-        LOG_INFO << "connection: " << connection;
+        LOG_TRACE << "connection: " << connection;
         bool close_req = (connection == "close")
                 || (request_.getVersion() == HTTPRequest::Version::HTTP10
                     && connection != "keep-alive");

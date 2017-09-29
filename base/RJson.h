@@ -78,7 +78,7 @@ enum parse_code {
 	PARSE_MISS_COMMA_OR_SQUARE_BRACKET
 };
 
-class RJSON : noncopyable {
+class RJSON : raver::noncopyable {
 public:
 	explicit RJSON(const std::string& js);
 	~RJSON();

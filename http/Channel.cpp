@@ -4,13 +4,11 @@
 
 namespace raver {
 
-// if socket wants to be read.
 void Channel::read()
 {
     getPool()->addTask(readcb_);
 }
 
-// if socket can be writed.
 void Channel::write()
 {
     getPool()->addTask(writecb_);
@@ -23,13 +21,14 @@ Channel::Channel(IOManager* io, int fd,
       readcb_(readcb), writecb_(writecb), mtx_(), next_(nullptr),
       can_read_(false), can_write_(false), waiting_read_(false), waiting_write_(false)
 {
-    LOG_INFO << "Channel ctor";
+    LOG_TRACE << "Channel ctor";
     wrapper::setNonBlockAndCloseOnExec(fd_);
     wrapper::setKeepAlive(fd_, true);
 }
 
 Channel::~Channel()
 {
+    LOG_TRACE << "Channel dtor";
 }
 
 ThreadPool* Channel::getPool()

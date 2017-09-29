@@ -25,7 +25,7 @@ private:
 
     void doRead(); // read request.
 
-    void doWrite(); // write respond.
+    void doWrite(); // write response.
 
     bool parseRequestOK();
 

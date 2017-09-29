@@ -26,7 +26,9 @@ public:
     void registerAcceptor(int port, AcceptorCallback cb);
 
     bool isStopped() const { return stopped_; }
+
     IOManager* ioManager() const { return io_.get(); }
+
 private:
     using Acceptors = std::vector<Acceptor*>;
     const int num_thread_;

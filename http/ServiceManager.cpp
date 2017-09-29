@@ -8,12 +8,12 @@ ServiceManager::ServiceManager(int num_thread)
     : num_thread_(num_thread), stop_requested_(false), stopped_(false),
       io_(new IOManager(num_thread_))
 {
-    LOG_DEBUG << "ServiceManager ctor";
+    LOG_TRACE << "ServiceManager ctor";
 }
 
 ServiceManager::~ServiceManager()
 {
-    LOG_DEBUG << "ServiceManager dtor";
+    LOG_TRACE << "ServiceManager dtor";
     stop();
     for (auto ac : acceptors_) {
         delete ac;

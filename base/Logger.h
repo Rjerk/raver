@@ -4,7 +4,7 @@
 #include <functional>
 #include <sstream>
 
-namespace logging {
+namespace raver {
 
 class Logger {
 public:
@@ -40,24 +40,24 @@ inline Logger::LogLevel Logger::logLevel()
     return g_loglevel;
 }
 
-#define LOG_TRACE if (logging::Logger::logLevel() <= logging::Logger::Trace) \
-    logging::Logger(__FILE__, __LINE__, __func__, 0, logging::Logger::Trace).stream()
+#define LOG_TRACE if (raver::Logger::logLevel() <= raver::Logger::Trace) \
+    raver::Logger(__FILE__, __LINE__, __func__, 0, raver::Logger::Trace).stream()
 
-#define LOG_DEBUG if (logging::Logger::logLevel() <= logging::Logger::Debug) \
-    logging::Logger(__FILE__, __LINE__, __func__, 0, logging::Logger::Debug).stream()
+#define LOG_DEBUG if (raver::Logger::logLevel() <= raver::Logger::Debug) \
+    raver::Logger(__FILE__, __LINE__, __func__, 0, raver::Logger::Debug).stream()
 
-#define LOG_INFO if (logging::Logger::logLevel() <= logging::Logger::Info) \
-    logging::Logger(__FILE__, __LINE__, logging::Logger::Info).stream()
+#define LOG_INFO if (raver::Logger::logLevel() <= raver::Logger::Info) \
+    raver::Logger(__FILE__, __LINE__, raver::Logger::Info).stream()
 
-#define LOG_WARN logging::Logger(__FILE__, __LINE__, logging::Logger::Warn).stream()
+#define LOG_WARN raver::Logger(__FILE__, __LINE__, raver::Logger::Warn).stream()
 
-#define LOG_ERROR logging::Logger(__FILE__, __LINE__, logging::Logger::Error).stream()
+#define LOG_ERROR raver::Logger(__FILE__, __LINE__, raver::Logger::Error).stream()
 
-#define LOG_FATAL logging::Logger(__FILE__, __LINE__, logging::Logger::Fatal).stream()
+#define LOG_FATAL raver::Logger(__FILE__, __LINE__, raver::Logger::Fatal).stream()
 
-#define LOG_SYSERR logging::Logger(__FILE__, __LINE__, false).stream()
+#define LOG_SYSERR raver::Logger(__FILE__, __LINE__, false).stream()
 
-#define LOG_SYSFATAL logging::Logger(__FILE__, __LINE__, true).stream()
+#define LOG_SYSFATAL raver::Logger(__FILE__, __LINE__, true).stream()
 
 }
 
