@@ -6,8 +6,10 @@
 
 ```
 $ make
-$ ./server [port] [thread-num]
+$ ./server
 ```
+
+打开：localhost:8888
 
 ## 实现模型
 
@@ -19,7 +21,7 @@ ServiceManager管理IOManager和Acceptor。IOManager负责管理ThreadPool和Pol
 
 HTTPService注册到ServiceManager时，会注册一个自己的afterAccept回调函数给Acceptor，在accept一个连接时就进行回调，并建立一个HTTPConnection，HTTPConnection建立Channel注册读写回调函数，把该Channel作为数据传递给epoll并关注监听套接字上的EPOLL事件。
 
-当EPOLL事件发生时，在IOManager中处理到来的事件，并的得到对应的Channel去处理IO操作，Channel会将读写任务放在ThreadPool的任务队列中，等待线程池中的线程进行处理。
+当EPOLL事件发生时，在IOManager中处理到来的事件，得到对应的Channel去处理IO操作，Channel会将读写任务放在ThreadPool的任务队列中，等待线程池中的线程进行处理。
 
 线程使用HTTPConnction::doRead函数读HTTPRequest，用HTTPParser解析它，然后生成对应的HTTPResponse，并发送响应，然后关闭该连接。
 

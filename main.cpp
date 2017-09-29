@@ -2,11 +2,11 @@
 #include "./http/HTTPService.h"
 #include "./base/RJson.h"
 #include "./base/Logger.h"
-#include <iostream>
 
 int main(/*int argc, char** argv*/)
 {
-    logging::Logger::setLevel(logging::Logger::LogLevel::Info);
+    using namespace raver;
+    Logger::setLevel(Logger::LogLevel::Trace);
 
     rjson::RJSON parser(readFile("config.json"));
     auto ret = parser.parseJson(); (void)ret;
@@ -16,8 +16,8 @@ int main(/*int argc, char** argv*/)
     auto thread_num = value->getValueFromObject("thread-num")->getNumber();
     auto port = value->getValueFromObject("port")->getNumber();
 
-    raver::ServiceManager manager(thread_num);
-    raver::HTTPService http_service(port, &manager);
+    ServiceManager manager(thread_num);
+    HTTPService http_service(port, &manager);
 
     manager.run();
 }
