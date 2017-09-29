@@ -36,8 +36,8 @@ public:
 
     bool closeConnectionOrNot() const
     { return close_connection_; }
-private:
 
+private:
     HTTPStatusCode status_code_;
     std::string status_message_;
     bool close_connection_;

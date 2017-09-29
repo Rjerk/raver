@@ -17,7 +17,7 @@ namespace {
 
 constexpr size_t BUF_SIZE = 1024;
 
-void defaultHTTPCallback(const HTTPRequest&, HTTPResponse* resp)
+void send404(HTTPResponse* resp)
 {
     resp->setStatusCode(HTTPResponse::HTTPStatusCode::NotFound404);
     resp->setStatusMessage("Not Found");
@@ -31,14 +31,20 @@ void defaultHTTPCallback(const HTTPRequest&, HTTPResponse* resp)
             "</html>");
 }
 
+void send501(HTTPResponse* resp)
+{
+    resp->setStatusCode(HTTPResponse::HTTPStatusCode::NotImp501);
+    resp->setStatusMessage("Method Not Implemented");
+    resp->setContentType("text/html");
+    resp->setBody("");
+}
+
 void handleHTTPCallback(const HTTPRequest& request, HTTPResponse* resp)
 {
     LOG_TRACE << "handleHTTPCallback";
     if (request.getMethod() != HTTPRequest::Method::Get
         && request.getMethod() != HTTPRequest::Method::Post) {
         LOG_TRACE << "use default";
-        defaultHTTPCallback(request, resp);
-        return ;
     }
 
     bool post = false;
@@ -60,6 +66,7 @@ void handleHTTPCallback(const HTTPRequest& request, HTTPResponse* resp)
     LOG_TRACE << "use path: " << path;
 
     struct stat st;
+    bool can_exe = false;
     if (::stat(path.c_str(), &st) == -1) {
         LOG_TRACE << "find file failed. use default";
         defaultHTTPCallback(request, resp);
@@ -71,12 +78,15 @@ void handleHTTPCallback(const HTTPRequest& request, HTTPResponse* resp)
         }
         if ((st.st_mode & S_IXUSR) || (st.st_mode & S_IXGRP) || (st.st_mode & S_IXOTH)) {
             LOG_TRACE << "file is executable";
-            post = true;
+            can_exe = true;
         }
     }
 
     if (post) {
         LOG_TRACE << "use POST";
+        char cgi_out[1024];
+	::execl(path.c_str(), nullptr);
+	LOG_TRACE << "execute cgi-program";
     } else {
         LOG_TRACE << "use GET";
         resp->setStatusCode(HTTPResponse::HTTPStatusCode::OK200);
