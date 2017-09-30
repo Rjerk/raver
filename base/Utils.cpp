@@ -148,3 +148,41 @@ int epoll_wait(int epfd, struct epoll_event* events, int maxevents, int timeout)
 }
 
 }
+
+namespace utils {
+
+std::string getFileExtension(const std::string& path)
+{
+    size_t pos;
+    if ((pos = path.find_last_of('.')) != std::string::npos) {
+        return std::string(path, pos);
+    }
+    return "";
+}
+
+void getContentType(const std::string& extension, std::string& content_type)
+{
+    content_type.clear();
+    std::ifstream mimefile("mime.types");
+    std::string line;
+    LOG_INFO << "start";
+    while (getline(mimefile, line)) {
+        LOG_INFO << line;
+        if (line[0] != '=') {
+            std::stringstream line_stream(line);
+
+            content_type.clear();
+            line_stream >> content_type;
+            LOG_INFO << "cont:" << content_type;
+            std::string ext;
+            while (line_stream >> ext) {
+                if (ext == extension) {
+                    return ;
+                }
+            }
+        }
+    }
+    content_type = "text/plain";
+}
+
+}

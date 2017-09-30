@@ -3,6 +3,10 @@
 
 #include <arpa/inet.h>
 #include <sys/epoll.h>
+#include <string>
+#include <sstream>
+#include <fstream>
+#include <set>
 
 namespace wrapper {
 
@@ -29,6 +33,14 @@ void setKeepAlive(int sockfd, bool on);
 int epoll_create(int size);
 
 int epoll_wait(int epfd, struct epoll_event* events, int maxevents, int timeout);
+
+}
+
+namespace utils {
+
+std::string getFileExtension(const std::string& path);
+
+void getContentType(const std::string& extension, std::string& content_type);
 
 }
 
