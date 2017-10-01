@@ -36,7 +36,13 @@ void send501(HTTPResponse* resp)
     resp->setStatusCode(HTTPResponse::HTTPStatusCode::NotImp501);
     resp->setStatusMessage("Method Not Implemented");
     resp->setContentType("text/html");
-    resp->setBody("");
+    resp->setBody("<html>"
+            "<head><title>505 Not Implemented</title></head>"
+            "<body bgcolor=\"white\">"
+            "<center><h1>501 Not Implemented</h1></center>"
+            "<hr><center>raver</center>"
+            "</body>"
+            "</html>");
 }
 
 void handleHTTPCallback(const HTTPRequest& request, HTTPResponse* resp)
@@ -44,7 +50,9 @@ void handleHTTPCallback(const HTTPRequest& request, HTTPResponse* resp)
     LOG_TRACE << "handleHTTPCallback";
     if (request.getMethod() != HTTPRequest::Method::Get
         && request.getMethod() != HTTPRequest::Method::Post) {
-        LOG_TRACE << "use default";
+        LOG_TRACE << "neither get nor post method";
+        send501(resp);
+        return ;
     }
 
     bool post = false;
@@ -69,7 +77,7 @@ void handleHTTPCallback(const HTTPRequest& request, HTTPResponse* resp)
     bool can_exe = false;
     if (::stat(path.c_str(), &st) == -1) {
         LOG_TRACE << "find file failed. use default";
-        defaultHTTPCallback(request, resp);
+        send404(resp);
         return ;
     } else {
         if ((st.st_mode & S_IFMT) == S_IFDIR) {
@@ -84,9 +92,11 @@ void handleHTTPCallback(const HTTPRequest& request, HTTPResponse* resp)
 
     if (post) {
         LOG_TRACE << "use POST";
-        char cgi_out[1024];
-	::execl(path.c_str(), nullptr);
-	LOG_TRACE << "execute cgi-program";
+        // TODO: cgi program.
+	    LOG_TRACE << "execute cgi-program";
+	    if (can_exe) {
+            ::execl(path.c_str(), path.c_str(), nullptr);
+        }
     } else {
         LOG_TRACE << "use GET";
         resp->setStatusCode(HTTPResponse::HTTPStatusCode::OK200);

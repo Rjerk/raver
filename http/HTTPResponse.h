@@ -15,7 +15,8 @@ public:
         OK200 = 200,
         MovedPermanently301 = 301,
         BadRequest400 = 400,
-        NotFound404 = 404
+        NotFound404 = 404,
+        NotImp501 = 501,
     };
 
     explicit HTTPResponse(bool close);
@@ -28,6 +29,12 @@ public:
 
     void setCloseConnection(bool on)
     { close_connection_ = on; }
+
+    void setContentType(const std::string& content_type)
+    { addHeader("Content-Type", content_type); }
+
+    void addHeader(const std::string& key, const std::string& value)
+    { headers_[key] = value; }
 
     void setBody(const std::string& body)
     { body_ = body; }
