@@ -11,6 +11,10 @@
 
 namespace raver {
 
+namespace detail {
+    void handleHTTPCallback(const HTTPRequest&, HTTPResponse*);
+}
+
 class HTTPService;
 class Channel;
 
@@ -33,6 +37,7 @@ private:
 
     void close();
 private:
+    friend void detail::handleHTTPCallback(const HTTPRequest&, HTTPResponse*);
     HTTPService* service_; // not own it.
     int connfd_;
     bool done;

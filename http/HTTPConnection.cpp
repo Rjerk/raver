@@ -13,9 +13,7 @@
 
 namespace raver {
 
-namespace {
-
-constexpr size_t BUF_SIZE = 1024;
+namespace detail {
 
 void send404(HTTPResponse* resp)
 {
@@ -98,11 +96,13 @@ void handleHTTPCallback(const HTTPRequest& request, HTTPResponse* resp)
             ::execl(path.c_str(), path.c_str(), nullptr);
         }
     } else {
+        Buffer* buf = nullptr;
+        HTTPService::fileCache()->pin(path.c_str(), &buf);
         LOG_TRACE << "use GET";
         resp->setStatusCode(HTTPResponse::HTTPStatusCode::OK200);
         resp->setStatusMessage("OK");
         resp->setCloseConnection(false);
-        resp->setBody(readFile(path.c_str()));
+        resp->setBody(buf->beginRead());
     }
 }
 
@@ -110,7 +110,7 @@ void handleHTTPCallback(const HTTPRequest& request, HTTPResponse* resp)
 
 HTTPConnection::HTTPConnection(HTTPService* service, int connfd)
     : service_(service), connfd_(connfd), done(false), channel_(nullptr),
-      in_(), out_(), request_(), response_(false), parser_(), cb_(handleHTTPCallback)
+      in_(), out_(), request_(), response_(false), parser_(), cb_(detail::handleHTTPCallback)
 {
     LOG_TRACE << "HTTPConnection ctor";
     channel_ = service_->ioManager()->newChannel(connfd, std::bind(&HTTPConnection::doRead, this),

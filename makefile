@@ -1,6 +1,6 @@
 objects = main.o ServiceManager.o HTTPService.o HTTPParser.o HTTPRequest.o \
 		  HTTPResponse.o HTTPConnection.o Channel.o Acceptor.o IOManager.o Poller.o \
-		  ThreadPool.o Timer.o TimeStamp.o Logger.o Utils.o RJson.o
+		  ThreadPool.o Timer.o TimeStamp.o Logger.o Utils.o RJson.o FileCache.o
 
 flags = -Wall -O -std=c++11 -pthread
 
@@ -56,6 +56,9 @@ Logger.o: base/Logger.cpp
 
 RJson.o: base/RJson.cpp
 	g++ $(flags) -c base/RJson.cpp
+
+FileCache.o: base/FileCache.cpp 
+	g++ $(flags) -c base/FileCache.cpp
 
 Utils.o: base/Utils.cpp
 	g++ $(flags) -c base/Utils.cpp
