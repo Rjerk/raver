@@ -1,5 +1,5 @@
-#include "../ThreadPool.h"
-#include "../Logger.h"
+#include "../base/ThreadPool.h"
+#include "../base/Logger.h"
 
 using namespace raver;
 
@@ -31,8 +31,8 @@ int main()
     ThreadPool pool(10);
     pool.addTask(threadMonitor, std::ref(pool), 10);
 
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 500; ++i) {
         pool.addTask(task, i);
     }
-    //pool.stop();
+    pool.stop();
 }
