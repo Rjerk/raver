@@ -5,6 +5,7 @@
 #include "../base/Utils.h"
 #include "../base/Logger.h"
 #include "../base/RJson.h"
+#include "../base/FileCache.h"
 
 #include <unistd.h>
 #include <strings.h>
@@ -12,6 +13,8 @@
 #include <sys/stat.h>
 
 namespace raver {
+
+FileCache HTTPConnection::filecache_{50 << 20};
 
 namespace detail {
 
@@ -97,12 +100,12 @@ void handleHTTPCallback(const HTTPRequest& request, HTTPResponse* resp)
         }
     } else {
         Buffer* buf = nullptr;
-        HTTPService::fileCache()->pin(path.c_str(), &buf);
+        HTTPConnection::fileCache()->pin(path.c_str(), &buf);
         LOG_TRACE << "use GET";
         resp->setStatusCode(HTTPResponse::HTTPStatusCode::OK200);
         resp->setStatusMessage("OK");
         resp->setCloseConnection(false);
-        resp->setBody(buf->beginRead());
+        resp->setBody(std::string(buf->beginRead(), buf->size()));
     }
 }
 
@@ -142,6 +145,7 @@ void HTTPConnection::startRead()
 
 void HTTPConnection::doRead()
 {
+    LOG_TRACE << "doRead begin.";
     int saved_errno;
     ssize_t n = in_.readFd(connfd_, &saved_errno);
     LOG_TRACE << "in_ size: " << in_.size();
@@ -160,11 +164,12 @@ void HTTPConnection::doRead()
         return ;
     }
 
-    LOG_TRACE << "handle request ok.";
+    LOG_TRACE << "doRead end";
 }
 
 void HTTPConnection::doWrite()
 {
+    LOG_TRACE << "doWrite begin";
     for ( ; ; ) {
         LOG_TRACE << "out_ size: " << out_.size();
         ssize_t n = ::write(connfd_, out_.beginRead(), out_.readableBytes());
@@ -191,6 +196,8 @@ void HTTPConnection::doWrite()
         LOG_TRACE << "we close the connection after send response.";
         close();
     }
+
+    LOG_TRACE << "doWrite end";
 }
 
 bool HTTPConnection::parseRequestOK()

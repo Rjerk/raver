@@ -54,14 +54,15 @@ void FileCache::pin(const std::string& filename, Buffer** buf)
 
     // if there are not enough space to contain a new file, unpin one (use LRU).
     while (static_cast<long>(capacity_ - bytes_used_) < filestat.st_size) {
+        LOG_TRACE << "bytes_used_: " << bytes_used_;
+        unpin(files_pinned_.back());
+
         if (bytes_used_ == 0) { // file size > capacity_.
             break;
         }
-
-        unpin(files_pinned_.back());
     }
 
-    if (bytes_used_ == 0) {
+    if (static_cast<long>(capacity_ - bytes_used_) < filestat.st_size) {
         LOG_ERROR << "file is too big.";
         return ; // FIXME: handle this error.
     }
@@ -79,7 +80,8 @@ void FileCache::pin(const std::string& filename, Buffer** buf)
 
     files_pinned_.push_front(filename);
     *buf = new_buf;
-    cache_[filename] = FileInfo{files_pinned_.begin(), new_buf, 1};
+    cache_.emplace(std::make_pair(filename, FileInfo(files_pinned_.begin(), new_buf, 1)));
+    //cache_[filename] = FileInfo(files_pinned_.begin(), new_buf, 1);
     bytes_used_ += new_buf->size();
 
     cache_lock_.unlock();

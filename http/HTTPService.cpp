@@ -6,8 +6,6 @@
 
 namespace raver {
 
-std::unique_ptr<FileCache> HTTPService::filecache_(new FileCache(50 << 20));
-
 HTTPService::HTTPService(int port, ServiceManager* sm)
     : manager_(sm)
 {
@@ -50,11 +48,6 @@ void HTTPService::afterAccept(int connfd)
 IOManager* HTTPService::ioManager() const
 {
     return manager_->ioManager();
-}
-
-FileCache* HTTPService::fileCache()
-{
-    return filecache_.get();
 }
 
 }

@@ -39,6 +39,9 @@ public:
     void setBody(const std::string& body)
     { body_ = body; }
 
+    void setBody(std::string&& body)
+    { body_ = std::move(body); }
+
     void appendToBuffer(Buffer* out);
 
     bool closeConnectionOrNot() const

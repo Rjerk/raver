@@ -29,14 +29,12 @@ public:
     void stop(); // tell manager I'm done.
 
     IOManager* ioManager() const;
-    static FileCache* fileCache();
 private:
     void afterAccept(int port);
 
 private:
     ServiceManager* manager_; // not own it.
 
-    static std::unique_ptr<FileCache> filecache_; // own it.
     std::vector<HTTPConnection*> connections_;
     std::mutex mtx_vec_;
 };

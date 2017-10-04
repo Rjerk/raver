@@ -3,10 +3,10 @@
 
 #include "../base/noncopyable.h"
 #include "../base/Buffer.h"
+#include "../base/FileCache.h"
 #include "HTTPRequest.h"
 #include "HTTPResponse.h"
 #include "HTTPParser.h"
-
 #include <functional>
 
 namespace raver {
@@ -24,6 +24,7 @@ class HTTPConnection : noncopyable {
 public:
     explicit HTTPConnection(HTTPService* service, int connfd);
     ~HTTPConnection();
+    static FileCache* fileCache() { return &filecache_; }
 private:
     void startRead();
 
@@ -36,13 +37,16 @@ private:
     bool handleRequest();
 
     void close();
+
 private:
-    friend void detail::handleHTTPCallback(const HTTPRequest&, HTTPResponse*);
+    //friend void detail::handleHTTPCallback(const HTTPRequest&, HTTPResponse*);
     HTTPService* service_; // not own it.
+
     int connfd_;
     bool done;
     Channel* channel_; // not own it.
 
+    static FileCache filecache_;
     Buffer in_;
     Buffer out_;
 
@@ -51,7 +55,6 @@ private:
     HTTPParser parser_;
     HTTPCallback cb_;
 };
-
 
 }
 
