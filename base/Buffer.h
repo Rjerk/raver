@@ -6,20 +6,27 @@
 #include <vector>
 #include <algorithm>
 #include <sys/uio.h>
+#include <cassert>
 
 #include "Logger.h"
 
 namespace raver {
 
-constexpr size_t INIT_SIZE = 1024;
 
 const char CRLF[] = "\r\n";
 
 class Buffer {
 public:
+    static const size_t INIT_SIZE = 1024;
+    static const size_t PREPEND_SIZE = 8;
+
     explicit Buffer(size_t sz = INIT_SIZE)
-        : buffer_(sz), reader_index_(0), writer_index_(0)
+        : buffer_(sz + PREPEND_SIZE),
+          reader_index_(PREPEND_SIZE), writer_index_(PREPEND_SIZE)
     {
+        assert(readableBytes() == 0);
+        assert(writableBytes() == sz);
+        assert(prependableBytes() == PREPEND_SIZE);
     }
 
     size_t size() const
@@ -42,7 +49,7 @@ public:
 
     void hasWriten(size_t len)
     {
-        makeSpace(len); // ensure len bytes to write.
+        assert(len <= writableBytes());
         writer_index_ += len;
     }
 
@@ -57,7 +64,9 @@ public:
 
     void append(const char* data, size_t len)
     {
-        makeSpace(len);
+        if (writableBytes() < len) {
+            makeSpace(len);
+        }
         std::copy(data, data+len, beginWrite());
         writer_index_ += len;
     }
@@ -74,19 +83,20 @@ public:
 
     void retrieve(size_t len)
     {
+        assert(len < readableBytes());
         if (len < readableBytes()) {
             reader_index_ += len;
         } else {
-            reader_index_ = 0;
-            writer_index_ = 0;
+            reader_index_ = PREPEND_SIZE;
+            writer_index_ = PREPEND_SIZE;
         }
     }
 
     void retrieveUntil(const char* end)
     {
-        if (peek() <= end && end <= beginWrite()) {
-            retrieve(end - peek());
-        }
+        assert(peek() <= end);
+        assert(end <= beginWrite());
+        retrieve(end - peek());
     }
 
     const char* peek() const
@@ -113,7 +123,7 @@ public:
         auto n = ::readv(fd, vec, iovcount);
         if (n < 0) {
             *saved_errno = errno;
-        } else if ((size_t)n <= writable) {
+        } else if (static_cast<size_t>(n) <= writable) {
             writer_index_ += n;
         } else { // n > writable
             writer_index_ = buffer_.size();
@@ -122,19 +132,28 @@ public:
         return n;
     }
 
+    void clear()
+    {
+        buffer_.clear();
+        reader_index_ = PREPEND_SIZE;
+        writer_index_ = PREPEND_SIZE;
+    }
+
 private:
     char* begin() { return &*buffer_.begin(); }
     const char* begin() const { return buffer_.data(); }
 
     void makeSpace(size_t len)
     {
-        if (writableBytes() + prependableBytes() < len) {
-            buffer_.resize(len);
+        if (writableBytes() + prependableBytes() < len + PREPEND_SIZE) {
+            buffer_.resize(len + writer_index_);
         } else {
-            auto readable = readableBytes();
-            std::copy(begin()+reader_index_, begin()+writer_index_, begin());
-            reader_index_ = 0;
+            assert(PREPEND_SIZE < reader_index_);
+            size_t readable = readableBytes();
+            std::copy(begin()+reader_index_, begin()+writer_index_, begin() + PREPEND_SIZE);
+            reader_index_ = PREPEND_SIZE;
             writer_index_ = reader_index_ + readable;
+            assert(readable == readableBytes());
         }
     }
 private:

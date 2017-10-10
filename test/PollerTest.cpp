@@ -2,6 +2,7 @@
 #include "../http/Channel.h"
 #include "../base/Logger.h"
 #include "../base/Utils.h"
+#include "../http/IOManager.h"
 #include <cstring>
 
 int main()
@@ -11,7 +12,7 @@ int main()
     int port = 8888;
     int listenfd = wrapper::socket(AF_INET, SOCK_STREAM, 0);
 
-    wrapper::setNonBlockAndCloseOnExec(listenfd);
+    LOG_INFO << "listenfd: " << listenfd;
 
     struct sockaddr_in servaddr;
     ::bzero(&servaddr, sizeof(servaddr));
@@ -30,46 +31,22 @@ int main()
     wrapper::listenOrDie(listenfd);
 
 
+    struct sockaddr_in clntaddr;
+    socklen_t len = sizeof(clntaddr);
+    int conn = ::accept(listenfd, (struct sockaddr*) &clntaddr, &len);
+    if (conn > 0) {
+        LOG_INFO << "accept";
+    } else {
+        LOG_SYSFATAL << "error" << ::strerror(errno);
+    }
+
+    LOG_INFO << "connfd: " << conn;
+
     Poller poller;
 
-    poller.create();
+    poller.setEvent(conn, nullptr);
 
-    for (; ; ) {
+    int event_num = poller.poll();
 
-        int nready = poller.poll();
-
-        struct sockaddr_in clntaddr;
-        socklen_t len = sizeof(clntaddr);
-        int conn = ::accept(listenfd, (struct sockaddr*) &clntaddr, &len);
-        if (conn > 0) {
-            LOG_INFO << "accept";
-        } else {
-            LOG_INFO << "error";
-            continue;
-        }
-
-
-        char buf[1024];
-        int n = wrapper::read(conn, buf, sizeof(buf));
-        LOG_INFO << n << "\n" << buf;
-
-        int event_flags = 0;
-        for (int i = 0; i < nready; ++i) {
-
-            LOG_INFO << "events num: " << nready;
-
-            Channel* ch = nullptr;
-            poller.getEvent(i, &event_flags, &ch);
-
-            if (event_flags & (Poller::PollEvent::READ | Poller::PollEvent::ERROR)) {
-                LOG_INFO << "readable event.";
-                ch->read();
-            }
-
-            if (event_flags & (Poller::PollEvent::WRITE | Poller::PollEvent::ERROR)) {
-                LOG_INFO << "writable event.";
-                ch->write();
-            }
-        }
-    }
+    LOG_INFO << "events: " << event_num;
 }
