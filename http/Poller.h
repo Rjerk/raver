@@ -20,8 +20,6 @@ public:
 
     ~Poller();
 
-    void create();
-
     void setEvent(int fd, Channel* data);
 
     void getEvent(int i, int* events, Channel** data);

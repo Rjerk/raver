@@ -15,6 +15,9 @@ using MutexGuard = std::lock_guard<std::mutex>;
 class Channel {
     friend class IOManager;
 public:
+    Channel(IOManager* io, int fd, const Callback& readcb, const Callback& writecb);
+    ~Channel();
+
     void read();
 
     void write();
@@ -26,10 +29,6 @@ public:
 
     int fd() const { return fd_; }
 private:
-    // used by IOManager.
-    Channel(IOManager* io, int fd, const Callback& readcb, const Callback& writecb);
-    ~Channel();
-
     ThreadPool* getPool();
 
 private:
@@ -39,7 +38,6 @@ private:
     Callback readcb_;
     Callback writecb_;
     std::mutex mtx_;
-    Channel* next_; // not own it.
     bool can_read_;
     bool can_write_;
     bool waiting_read_;

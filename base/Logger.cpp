@@ -43,7 +43,7 @@ Logger::Logger(const char* filename, int line, const char* func_name,
     sstream_ << func_name << " ";
     sstream_ << ": ";
     if (errornum != 0) {
-        sstream_ << ::strerror(errornum);
+        sstream_ << "errno: " << errornum << "[" << ::strerror(errornum) << "]";
     }
     sstream_ << " ";
 }

@@ -4,6 +4,7 @@
 #include "../base/ThreadPool.h"
 #include "../base/TimeStamp.h"
 #include <map>
+#include <list>
 
 namespace raver {
 
@@ -35,7 +36,7 @@ public:
 private:
     std::unique_ptr<ThreadPool> pool_; // own it.
     std::unique_ptr<Poller> poller_; // own it.
-    Channel* channel_; // a list of channel, own it.
+    std::list<Channel*> channel_; //own it.
     bool polling_;
     bool stopped_;
 

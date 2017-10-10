@@ -18,7 +18,7 @@ Channel::Channel(IOManager* io, int fd,
                  const Callback& readcb,
                  const Callback& writecb)
     : fd_(fd), io_(io), closed_fd_(false),
-      readcb_(readcb), writecb_(writecb), mtx_(), next_(nullptr),
+      readcb_(readcb), writecb_(writecb), mtx_(),
       can_read_(false), can_write_(false), waiting_read_(false), waiting_write_(false)
 {
     LOG_TRACE << "Channel ctor";

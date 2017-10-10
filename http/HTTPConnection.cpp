@@ -164,6 +164,8 @@ void HTTPConnection::doRead()
         return ;
     }
 
+    in_.clear();
+
     LOG_TRACE << "doRead end";
 }
 
@@ -196,6 +198,8 @@ void HTTPConnection::doWrite()
         LOG_TRACE << "we close the connection after send response.";
         close();
     }
+
+    out_.clear();
 
     LOG_TRACE << "doWrite end";
 }

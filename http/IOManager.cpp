@@ -26,12 +26,11 @@ IgnoreSigPipe initObj;
 IOManager::IOManager(int num_thread)
     : pool_(new ThreadPool(num_thread)),
       poller_(new Poller()),
-      channel_(nullptr),
+      channel_(),
       polling_(false),
       stopped_(false)
 {
     LOG_TRACE << "IOManager ctor";
-    poller_->create();
 }
 
 IOManager::~IOManager()
@@ -62,25 +61,8 @@ void IOManager::poll()
         // got events.
         int nready = poller_->poll();
 
-        /*{ TODO: timer task.
-            MutexGuard guard(mtx_timer_queue_);
-            TimeStamp::Ticks now = TimeStamp::getTicks();
-
-            auto to_execute = timer_queue_.cbegin();
-            while (to_execute != timer_queue_.cend()) {
-                if (to_execute->first > now) {
-                    break;
-                } else {
-                    // handle tasks in timer queue.
-                    pool_->addTask(to_execute->second);
-                    timer_queue_.erase(to_execute++);
-                }
-            }
-        }*/
-
         int event_flags;
         for (int i = 0; i < nready; ++i) {
-            LOG_TRACE << "events num: " << nready;
             Channel* ch = nullptr;
             poller_->getEvent(i, &event_flags, &ch);
             if (event_flags & (Poller::PollEvent::READ | Poller::PollEvent::ERROR)) {
@@ -92,19 +74,6 @@ void IOManager::poll()
                 ch->write();
             }
         }
-
-        Channel* to_delete;
-        {
-            MutexGuard guard(mtx_channel_);
-            to_delete = channel_;
-            channel_ = nullptr;
-        }
-        while (to_delete) {
-            auto prev = to_delete;
-            to_delete = to_delete->next_;
-            delete prev;
-        }
-
     }
 
     {
@@ -131,12 +100,6 @@ void IOManager::stop()
     }
 
     pool_->stop();
-
-    while (channel_) {
-        auto prev = channel_;
-        channel_ = channel_->next_;
-        delete prev;
-    }
 }
 
 void IOManager::addTimer(double delay, const TaskType& task)
@@ -152,6 +115,7 @@ void IOManager::addTimer(double delay, const TaskType& task)
 Channel* IOManager::newChannel(int listenfd, const Callback& readcb, const Callback& writecb)
 {
     Channel* new_ch = new Channel(this, listenfd, readcb, writecb);
+    channel_.push_back(new_ch);
     poller_->setEvent(listenfd, new_ch);
     return new_ch;
 }
@@ -161,12 +125,9 @@ void IOManager::removeChannel(Channel* ch)
     if (ch == nullptr) {
         return ;
     }
-
     {
         MutexGuard guard(mtx_channel_);
-        ch->next_ = channel_;
-        channel_ = ch;
-        ch = nullptr;
+        channel_.remove(ch);
     }
 }
 

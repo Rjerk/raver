@@ -3,25 +3,30 @@
 #include "../base/Utils.h"
 #include <sys/epoll.h>
 #include <unistd.h>
+#include <vector>
 
 namespace raver {
 
-namespace detail {
+namespace {
 
-constexpr int MAX_FDS_PER_POLL = 1024;
+constexpr int EVENT_INIT_SIZE = 10;
 
 }
 
 struct Poller::InternalPoller {
-    InternalPoller(): fd_(-1) { }
+    InternalPoller(): fd_(-1), events_(EVENT_INIT_SIZE){ }
 
     int fd_;
-    struct epoll_event events_[detail::MAX_FDS_PER_POLL];
+    std::vector<struct epoll_event> events_;
 };
 
 Poller::Poller()
     : poller_(new InternalPoller())
 {
+    poller_->fd_ = ::epoll_create1(EPOLL_CLOEXEC);
+    if (poller_->fd_ < 0) {
+        LOG_SYSERR << "epoll_create1 error ";
+    }
     LOG_TRACE << "Poller ctor";
 }
 
@@ -33,23 +38,25 @@ Poller::~Poller()
     }
 }
 
-void Poller::create()
-{
-    // FIXME: epoll_create1(EPOLL_CLOEXEC)
-    poller_->fd_ = wrapper::epoll_create(detail::MAX_FDS_PER_POLL);
-}
-
 int Poller::poll()
 {
     int ret;
     for ( ; ; ) {
-        if ((ret = ::epoll_wait(poller_->fd_, poller_->events_,
-                         detail::MAX_FDS_PER_POLL, 100)) >= 0) {
-            break; // got event.
-        } else if (errno == EINTR) {
+        if ((ret = ::epoll_wait(poller_->fd_, &*poller_->events_.begin(),
+                            static_cast<int>(poller_->events_.size()), 100)) > 0) {
+            LOG_TRACE << "got events num: " << ret;
+            if (static_cast<size_t>(ret) == poller_->events_.size()) {
+                poller_->events_.resize(poller_->events_.size() * 1.5);
+            }
+            break;
+        } else if (ret == 0) {
+            //LOG_TRACE << "nothing happended.";
             continue;
-        } else {
-            LOG_SYSFATAL << "epoll_wait";
+        } else if (ret < 0) {
+            if (errno != EINTR) {
+                LOG_SYSERR << "epoll_wait";
+                break;
+            }
         }
     }
     return ret;
