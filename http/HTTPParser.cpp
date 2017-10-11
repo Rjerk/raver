@@ -6,6 +6,7 @@ namespace raver {
 
 bool HTTPParser::parseRequest(Buffer* buf, HTTPRequest* req)
 {
+    LOG_TRACE << "";
     bool ok = true;
     bool has_more = true;
 

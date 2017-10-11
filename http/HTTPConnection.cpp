@@ -104,7 +104,7 @@ void handleHTTPCallback(const HTTPRequest& request, HTTPResponse* resp)
         LOG_TRACE << "use GET";
         resp->setStatusCode(HTTPResponse::HTTPStatusCode::OK200);
         resp->setStatusMessage("OK");
-        resp->setCloseConnection(false);
+        resp->setCloseConnection(true);
         resp->setBody(std::string(buf->beginRead(), buf->size()));
     }
 }
@@ -166,47 +166,50 @@ void HTTPConnection::doRead()
 
     in_.clear();
 
+
     LOG_TRACE << "doRead end";
 }
 
 void HTTPConnection::doWrite()
 {
-    LOG_TRACE << "doWrite begin";
-    for ( ; ; ) {
-        LOG_TRACE << "out_ size: " << out_.size();
-        ssize_t n = ::write(connfd_, out_.beginRead(), out_.readableBytes());
-        if (n > 0) {
-            LOG_TRACE << "write " << n << " bytes to connfd_";
-            out_.retrieve(n);
-            if (out_.readableBytes() == 0) {
-                break;
-            }
-        } else if (n == -1 && errno == EAGAIN) {
-            LOG_SYSERR << "get eagain.";
-            break;
-        } else if (n == -1) { // other error.
-            LOG_SYSERR << "write error." << strerror(errno);
-            break;
-        } else if (n == 0) {
-            LOG_ERROR << "write: n == 0.";
-            break;
-        }
+    LOG_TRACE << "doWrite begin " << this;
+
+    int writen_bytes = 0;
+    while ((writen_bytes = ::write(connfd_, out_.beginRead(), out_.readableBytes())) > 0) {
+        LOG_TRACE << "write connfd_: " << writen_bytes;
+        LOG_TRACE << "readableBytes: " << out_.readableBytes();
+        assert(static_cast<size_t>(writen_bytes) <= out_.readableBytes());
+        out_.retrieve(writen_bytes);
     }
 
-    // TODO: shutdown after send respond.
-    if (response_.closeConnectionOrNot()) {
+    if (out_.readableBytes() == 0 && response_.closeConnectionOrNot()) {
         LOG_TRACE << "we close the connection after send response.";
-        close();
+        shutdown(connfd_, SHUT_WR);
+    }
+
+    if (writen_bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+        LOG_SYSERR << "EAGAIN write error";
+
+        return ;
+    }
+
+    if (writen_bytes < 0) {
+        LOG_SYSERR << "write error";
+        return ;
     }
 
     out_.clear();
+
+    service_->ioManager()->poller()->updateEvent(EPOLLOUT, EPOLL_CTL_DEL, channel_);
 
     LOG_TRACE << "doWrite end";
 }
 
 bool HTTPConnection::parseRequestOK()
 {
+    LOG_TRACE << "";
     request_.clear();
+    in_.append("\0", 1);
     bool ret = parser_.parseRequest(&in_, &request_);
     if (!ret) { // send 404 bad request.
         LOG_ERROR << "Parse HTTP request error.";
@@ -218,6 +221,8 @@ bool HTTPConnection::parseRequestOK()
 
 bool HTTPConnection::handleRequest()
 {
+    LOG_TRACE << "";
+
     if (!parseRequestOK()) {
         LOG_ERROR << "parse request failed.";
         return false;

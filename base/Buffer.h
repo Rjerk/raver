@@ -83,12 +83,9 @@ public:
 
     void retrieve(size_t len)
     {
-        assert(len < readableBytes());
-        if (len < readableBytes()) {
+        assert(len <= readableBytes());
+        if (len <= readableBytes()) {
             reader_index_ += len;
-        } else {
-            reader_index_ = PREPEND_SIZE;
-            writer_index_ = PREPEND_SIZE;
         }
     }
 

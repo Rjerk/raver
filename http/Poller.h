@@ -24,8 +24,11 @@ public:
 
     void getEvent(int i, int* events, Channel** data);
 
+    void updateEvent(int events, int operation, Channel* data);
+
     int poll();
 
+    int fd() const;
 private:
     struct InternalPoller;
     std::unique_ptr<InternalPoller> poller_;

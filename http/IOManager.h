@@ -3,6 +3,7 @@
 
 #include "../base/ThreadPool.h"
 #include "../base/TimeStamp.h"
+#include "Poller.h"
 #include <map>
 #include <list>
 
@@ -33,6 +34,8 @@ public:
     void removeChannel(Channel* ch);
 
     bool stopped() const;
+
+    Poller* poller() const { return poller_.get(); }
 private:
     std::unique_ptr<ThreadPool> pool_; // own it.
     std::unique_ptr<Poller> poller_; // own it.

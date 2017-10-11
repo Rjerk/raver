@@ -40,12 +40,11 @@ Logger::Logger(const char* filename, int line, const char* func_name,
     sstream_ << detail::getTimeStr() << " ";
     sstream_ << filename << " ";
     sstream_ << "(" << line << ") ";
-    sstream_ << func_name << " ";
+    sstream_ << func_name;
     sstream_ << ": ";
     if (errornum != 0) {
-        sstream_ << "errno: " << errornum << "[" << ::strerror(errornum) << "]";
+        sstream_ << "errno: " << errornum << " [" << ::strerror(errornum) << "] ";
     }
-    sstream_ << " ";
 }
 
 Logger::Logger(const char* filename, int line, LogLevel level)

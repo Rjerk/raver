@@ -1,4 +1,5 @@
 #include "Poller.h"
+#include "Channel.h"
 #include "../base/Logger.h"
 #include "../base/Utils.h"
 #include <sys/epoll.h>
@@ -38,6 +39,11 @@ Poller::~Poller()
     }
 }
 
+int Poller::fd() const
+{
+    return poller_->fd_;
+}
+
 int Poller::poll()
 {
     int ret;
@@ -67,7 +73,7 @@ void Poller::setEvent(int fd, Channel* data)
     struct epoll_event ev;
     ev.events = EPOLLIN | EPOLLOUT | EPOLLPRI |
                 EPOLLERR | EPOLLHUP | EPOLLET;
-    ev.data.ptr = reinterpret_cast<void*>(data);
+    ev.data.ptr = static_cast<void*>(data);
     if (::epoll_ctl(poller_->fd_, EPOLL_CTL_ADD, fd, &ev) != 0) {
         LOG_SYSERR << "Cannot add epoll descriptor";
     }
@@ -76,7 +82,7 @@ void Poller::setEvent(int fd, Channel* data)
 void Poller::getEvent(int i, int* events, Channel** data)
 {
     *events &= 0x00000000;
-    *data = reinterpret_cast<Channel*>(poller_->events_[i].data.ptr);
+    *data = static_cast<Channel*>(poller_->events_[i].data.ptr);
     auto flags = poller_->events_[i].events;
     if ((flags & EPOLLHUP) && !(flags & EPOLLIN)) {
         LOG_WARN << "fd: " << poller_->fd_ << " EPOLLHUP";
@@ -92,6 +98,22 @@ void Poller::getEvent(int i, int* events, Channel** data)
     }
     if (flags & (EPOLLOUT | EPOLLHUP)) {
         *events |= PollEvent::WRITE;
+    }
+}
+
+void Poller::updateEvent(int events, int operation, Channel* data)
+{
+    struct epoll_event ev;
+    ev.events = events;
+    ev.data.ptr = static_cast<void*>(data);
+
+    LOG_TRACE << (operation == EPOLL_CTL_MOD ? "mod" : "add")
+              << " read " << (ev.events & EPOLLIN)
+              << " write " << (ev.events & EPOLLOUT);
+
+    int ret = epoll_ctl(poller_->fd_, operation, data->fd(), &ev);
+    if (ret < 0) {
+        LOG_SYSERR << "epoll_ctl error";
     }
 }
 
