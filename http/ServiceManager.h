@@ -1,43 +1,37 @@
 #ifndef SERVICE_MANAGER_H
 #define SERVICE_MANAGER_H
 
+#include "../base/noncopyable.h"
 #include <vector>
-#include <mutex>
-#include <condition_variable>
-
-#include "Acceptor.h"
+#include <functional>
+#include <memory>
 
 namespace raver {
 
 class IOManager;
+class Acceptor;
 
 class ServiceManager : noncopyable {
 public:
     using AcceptorCallback = std::function<void (int)>;
 
-    explicit ServiceManager(int num_thread = 1);
+    explicit ServiceManager(int thread_num);
 
     ~ServiceManager();
 
     void run();
 
-    void stop();
+    void registerAcceptor(int port, const AcceptorCallback& acceptor_cb);
 
-    void registerAcceptor(int port, AcceptorCallback cb);
-
-    bool isStopped() const { return stopped_; }
-
-    IOManager* ioManager() const { return io_.get(); }
+    IOManager* ioManager() const { return iomanager_.get(); }
+private:
 
 private:
-    using Acceptors = std::vector<Acceptor*>;
-    const int num_thread_;
-    bool stop_requested_;
-    bool stopped_;
-    Acceptors acceptors_;
-    std::unique_ptr<IOManager> io_;
-    std::mutex mtx_;
-    std::condition_variable cv_;
+    std::unique_ptr<IOManager> iomanager_;
+
+    //using Acceptors = std::vector<Acceptor*>;
+    //Acceptors acceptors_;
+    std::unique_ptr<Acceptor> acceptor_;
 };
 
 }

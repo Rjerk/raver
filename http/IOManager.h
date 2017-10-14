@@ -1,57 +1,51 @@
 #ifndef IO_MANAGER_H
 #define IO_MANAGER_H
 
-#include "../base/ThreadPool.h"
-#include "../base/TimeStamp.h"
-#include "Poller.h"
-#include <map>
-#include <list>
+#include "../base/noncopyable.h"
+
+#include <functional>
+#include <memory>
+#include <vector>
 
 namespace raver {
 
 class Channel;
-class Poller;
+class ThreadPool;
+class EPoller;
 
-using Callback = std::function<void ()>;
-
-class IOManager : noncopyable {
-    friend class Channel;
+class IOManager {
 public:
-    explicit IOManager(int num_thread);
+    using ReadCallback = std::function<void ()>;
+    using WriteCallback = std::function<void ()>;
+    using TaskType = std::function<void ()>;
+
+    explicit IOManager(int thread_num);
 
     ~IOManager();
 
-    void poll();
+    void run();
 
-    void stop();
+    void removeChannel(Channel* channel);
+
+    void updateChannel(Channel* channel);
 
     void addTask(const TaskType& task);
 
-    void addTimer(double delay, const TaskType& task);
-
-    Channel* newChannel(int listenfd, const Callback& readcb, const Callback& writecb);
-
-    void removeChannel(Channel* ch);
-
-    bool stopped() const;
-
-    Poller* poller() const { return poller_.get(); }
 private:
-    std::unique_ptr<ThreadPool> pool_; // own it.
-    std::unique_ptr<Poller> poller_; // own it.
-    std::list<Channel*> channel_; //own it.
-    bool polling_;
-    bool stopped_;
+    std::unique_ptr<ThreadPool> threadpool_;
+    std::unique_ptr<EPoller> epoller_;
 
-    using TimerQueue = std::multimap<TimeStamp::Ticks, TaskType>;
-    TimerQueue timer_queue_;
+    bool event_handling_;
+    bool quit_;
 
-    std::mutex mtx_timer_queue_;
-    mutable std::mutex mtx_stop_;
-    std::mutex mtx_channel_;
-    std::condition_variable cv_polling_;
+    using ChannelList = std::vector<Channel*>;
+    ChannelList active_channels_;
+    Channel* current_active_channel_;
+
 };
 
+
 }
+
 
 #endif

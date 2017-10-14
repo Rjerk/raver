@@ -1,14 +1,14 @@
 #ifndef HTTP_PARSER_H
 #define HTTP_PARSER_H
 
-#include "../base/noncopyable.h"
+#include "HTTPRequest.h"
 
 namespace raver {
 
 class Buffer;
 class HTTPRequest;
 
-class HTTPParser : noncopyable {
+class HTTPParser {
 public:
     enum RequestParseState {
         ExpectRequstLine,
@@ -19,11 +19,20 @@ public:
 
     HTTPParser(): state_(ExpectRequstLine) { }
 
+    ~HTTPParser() { }
+
     bool gotAll() { return state_ == GotAll; }
-    bool parseRequest(Buffer* in, HTTPRequest* req);
-    bool parseRequestLine(const char* begin, const char* end, HTTPRequest** req);
+
+    bool parseRequest(Buffer* in);
+
+    const HTTPRequest& request() const { return request_; }
+
+private:
+    bool parseRequestLine(const char* begin, const char* end);
+
 private:
     RequestParseState state_;
+    HTTPRequest request_;
 };
 
 

@@ -1,49 +1,94 @@
 #ifndef CHANNEL_H
 #define CHANNEL_H
 
+#include "../base/noncopyable.h"
 #include <functional>
-#include <mutex>
+#include <sys/epoll.h>
 
 namespace raver {
 
 class IOManager;
-class ThreadPool;
 
-using Callback = std::function<void ()>;
-using MutexGuard = std::lock_guard<std::mutex>;
-
-class Channel {
-    friend class IOManager;
+class Channel : noncopyable {
 public:
-    Channel(IOManager* io, int fd, const Callback& readcb, const Callback& writecb);
+    using ReadEventCallback = std::function<void ()>;
+    using EventCallback = std::function<void ()>;
+
+    Channel(IOManager* iomanager, int fd);
+
     ~Channel();
 
-    void read();
+    void handleEvent();
 
-    void write();
+    void setReadCallback(const ReadEventCallback& cb)
+    { readcb_ = cb; }
+    void setWriteCallback(const EventCallback& cb)
+    { writecb_ = cb; }
+    void setCloseCallback(const EventCallback& cb)
+    { closecb_ = cb; }
+    void setErrorCallback(const EventCallback& cb)
+    { errorcb_ = cb; }
 
-    void setReadCallback(const Callback& readcb) { readcb_ = readcb; }
-    void setReadCallback(Callback&& readcb) { readcb_ = std::move(readcb); }
-    void setWriteCallback(const Callback& writecb) { writecb_ = writecb; }
-    void setWriteCallback(Callback&& writecb) { writecb_ = std::move(writecb); }
+    void setReadCallback(ReadEventCallback&& cb)
+    { readcb_ = std::move(cb); }
+    void setWriteCallback(EventCallback&& cb)
+    { writecb_ = std::move(cb); }
+    void setCloseCallback(EventCallback&& cb)
+    { closecb_ = std::move(cb); }
+    void setErrorCallback(EventCallback&& cb)
+    { errorcb_ = std::move(cb); }
+
+    void enableReading() { events_ |= kReadEvent; update(); }
+    void disableReading() { events_ &= ~kReadEvent; update(); }
+    void enableWriting() { events_ |= kWriteEvent; update(); }
+    void disableWriting() { events_ &= ~kWriteEvent; update(); }
+    void disableAll() { events_ = kNoneEvent; update(); }
+
+    bool isReading() const { return events_ & kReadEvent; }
+    bool isWriting() const { return events_ & kWriteEvent; }
+    bool isNoneEvent() const { return events_ == kNoneEvent; }
+
+    // used by epoller.
+    int events() { return events_; }
+    void setREvents(int revents) { revents_ = revents; }
+    int index() const { return index_; }
+    void setIndex(int index) { index_ = index; }
+
+    void readWhenReady();
+
+    void writeWhenReady();
+
+    void remove();
 
     int fd() const { return fd_; }
 private:
-    ThreadPool* getPool();
+    void update();
+
+    void readIfWaiting();
+
+    void writeIfWaiting();
 
 private:
+    static const int kNoneEvent = 0;
+    static const int kReadEvent = EPOLLIN | EPOLLPRI;
+    static const int kWriteEvent = EPOLLOUT;
+
+    IOManager* iomanager_;
     int fd_;
-    IOManager* io_; // not own it.
-    bool closed_fd_;
-    Callback readcb_;
-    Callback writecb_;
-    std::mutex mtx_;
-    bool can_read_;
-    bool can_write_;
-    bool waiting_read_;
-    bool waiting_write_;
+    int events_;
+    int revents_; // received event types of epoll.
+    int index_; // used by epoller;
+
+    bool event_handling_;
+
+    ReadEventCallback readcb_;
+    EventCallback writecb_;
+    EventCallback closecb_;
+    EventCallback errorcb_;
 };
 
+
 }
+
 
 #endif

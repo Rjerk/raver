@@ -44,7 +44,7 @@ public:
 
     void appendToBuffer(Buffer* out);
 
-    bool closeConnectionOrNot() const
+    bool closeConnection() const
     { return close_connection_; }
 
 private:

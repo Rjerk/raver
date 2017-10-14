@@ -1,134 +1,69 @@
-#include "IOManager.h"
-#include "Poller.h"
-#include "Channel.h"
-#include "../base/ThreadPool.h"
-#include "../base/TimeStamp.h"
 #include "../base/Logger.h"
+#include "../base/ThreadPool.h"
 
-#include <signal.h>
+#include "IOManager.h"
+#include "Channel.h"
+#include "EPoller.h"
+
+#include <algorithm>
+#include <cassert>
 
 namespace raver {
 
-namespace {
-
-class IgnoreSigPipe {
-public:
-    IgnoreSigPipe()
-    {
-        ::signal(SIGPIPE, SIG_IGN);
-    }
-};
-
-IgnoreSigPipe initObj;
-
-}
-
-IOManager::IOManager(int num_thread)
-    : pool_(new ThreadPool(num_thread)),
-      poller_(new Poller()),
-      channel_(),
-      polling_(false),
-      stopped_(false)
+IOManager::IOManager(int thread_num)
+    : threadpool_(new ThreadPool(thread_num)),
+      epoller_(new EPoller(this)),
+      event_handling_(false),
+      quit_(false),
+      active_channels_(),
+      current_active_channel_(nullptr)
 {
-    LOG_TRACE << "IOManager ctor";
+    LOG_TRACE << "IOManager ctor.";
 }
 
 IOManager::~IOManager()
 {
-    LOG_TRACE << "IOManager dtor";
-    stop();
+    LOG_TRACE << "IOManager dtor.";
+}
+
+void IOManager::run()
+{
+    while (!quit_) {
+        active_channels_.clear();
+        epoller_->poll(&active_channels_);
+
+        event_handling_ = true;
+        LOG_TRACE << "event handing begin.";
+        for (auto it = active_channels_.begin(); it != active_channels_.end(); ++it) {
+            current_active_channel_ = *it;
+            current_active_channel_->handleEvent();
+        }
+        LOG_TRACE << "event handing end.";
+        current_active_channel_ = nullptr;
+        event_handling_ = false;
+    }
+
+    LOG_TRACE << "IOManager stopped.";
+}
+
+void IOManager::updateChannel(Channel* channel)
+{
+    epoller_->updateChannel(channel);
+}
+
+void IOManager::removeChannel(Channel* channel)
+{
+    if (event_handling_) {
+        assert(current_active_channel_ == channel
+            || std::find(active_channels_.begin(), active_channels_.end(), channel) == active_channels_.end());
+    }
+    epoller_->removeChannel(channel);
 }
 
 void IOManager::addTask(const TaskType& task)
 {
-    pool_->addTask(task);
+    threadpool_->addTask(task);
 }
 
-bool IOManager::stopped() const
-{
-    MutexGuard guard(mtx_stop_);
-    return stopped_;
-}
-
-void IOManager::poll()
-{
-    {
-        MutexGuard guard(mtx_stop_);
-        polling_ = true;
-    }
-
-    while (!stopped()) {
-        // got events.
-        int nready = poller_->poll();
-
-        int event_flags;
-        for (int i = 0; i < nready; ++i) {
-            Channel* ch = nullptr;
-            poller_->getEvent(i, &event_flags, &ch);
-            if (event_flags & (Poller::PollEvent::READ | Poller::PollEvent::ERROR)) {
-                LOG_TRACE << "got readable event";
-                ch->read();
-            }
-            if (event_flags & (Poller::PollEvent::WRITE | Poller::PollEvent::ERROR)) {
-                LOG_TRACE << "got writable event";
-                ch->write();
-            }
-        }
-    }
-
-    {
-        MutexGuard guard(mtx_stop_);
-        polling_ = false;
-    }
-    cv_polling_.notify_all();
-}
-
-void IOManager::stop()
-{
-    {
-        MutexGuard guard(mtx_stop_);
-        if (stopped()) {
-            return ;
-        }
-        stopped_ = true;
-    }
-
-    // stop poller_;
-    {
-        std::unique_lock<std::mutex> lock(mtx_stop_);
-        cv_polling_.wait(lock, [&](){ return polling_ == false; });
-    }
-
-    pool_->stop();
-}
-
-void IOManager::addTimer(double delay, const TaskType& task)
-{
-    TimeStamp::Ticks ts = TimeStamp::getTicks()
-                     + delay * TimeStamp::ticksPerSecond();
-    {
-        MutexGuard guard(mtx_timer_queue_);
-        timer_queue_.insert(std::make_pair(ts, task)); // process task at ts.
-    }
-}
-
-Channel* IOManager::newChannel(int listenfd, const Callback& readcb, const Callback& writecb)
-{
-    Channel* new_ch = new Channel(this, listenfd, readcb, writecb);
-    channel_.push_back(new_ch);
-    poller_->setEvent(listenfd, new_ch);
-    return new_ch;
-}
-
-void IOManager::removeChannel(Channel* ch)
-{
-    if (ch == nullptr) {
-        return ;
-    }
-    {
-        MutexGuard guard(mtx_channel_);
-        channel_.remove(ch);
-    }
-}
 
 }

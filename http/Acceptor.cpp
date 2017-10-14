@@ -1,67 +1,89 @@
+#include "../base/Utils.h"
+#include "../base/Logger.h"
 #include "Acceptor.h"
 #include "IOManager.h"
-#include "../base/Utils.h"
 #include "Channel.h"
-#include <strings.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <string.h>
+
+#include <cstring>
 
 namespace raver {
 
-Acceptor::Acceptor(IOManager* manager, int port, const AcceptorCallback& cb)
-    : listenfd_(-1), manager_(manager), channel_(nullptr), accept_cb_(cb)
+Acceptor::Acceptor(IOManager* iomanager, int port, const AcceptorCallback& acceptor_cb)
+    : iomanager_(iomanager), listenfd_(-1), channel_(), acceptor_cb_(acceptor_cb)
 {
-    // get and set listenfd.
     listenfd_ = wrapper::socket(AF_INET, SOCK_STREAM, 0);
-    struct sockaddr_in servaddr;
-    ::bzero(&servaddr, sizeof(servaddr));
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_port = htons(port);
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    wrapper::setNonBlockAndCloseOnExec(listenfd_);
+
+    struct sockaddr_in serv_addr;
+    ::bzero(&serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(port);
+    serv_addr.sin_addr.s_addr = INADDR_ANY;
+
     int opt = 1;
-    int ret = ::setsockopt(listenfd_, SOL_SOCKET, SO_REUSEADDR, (const void*)&opt, sizeof(opt));
-    if (ret < 0 && opt) {
-        LOG_SYSERR << "SO_REUSEPORT failed.";
-    }
+    ::setsockopt(listenfd_, SOL_SOCKET, SO_REUSEADDR, (const void*)&opt, sizeof(opt));
     ::setsockopt(listenfd_, SOL_SOCKET, SO_REUSEPORT, (const void*)&opt, sizeof(opt));
-    wrapper::bindOrDie(listenfd_, (struct sockaddr*) &servaddr);
+
+    wrapper::bindOrDie(listenfd_, (struct sockaddr*) &serv_addr);
     wrapper::listenOrDie(listenfd_);
 
-    channel_ = manager_.get()->newChannel(listenfd_, std::bind(&Acceptor::doAccept, this),
-                                               std::bind(&Acceptor::doNothing, this));
+    channel_.reset(new Channel(iomanager_, listenfd_));
+    channel_->setReadCallback(std::bind(&Acceptor::doAccept, this));
 }
 
 Acceptor::~Acceptor()
 {
-    if (manager_) {
-        close();
-    }
-}
-
-void Acceptor::startAccept()
-{
-    channel_->read();
-}
-
-void Acceptor::close()
-{
+    channel_->disableAll();
+    channel_->remove();
     wrapper::close(listenfd_);
-    if (channel_) {
-        manager_->removeChannel(channel_);
-    }
 }
 
 void Acceptor::doAccept()
 {
-    struct sockaddr_in clntaddr;
-    socklen_t len = sizeof(clntaddr);
-    int connfd = ::accept(listenfd_, (struct sockaddr *) &clntaddr, &len);
-    if (connfd < 0 && errno == EAGAIN) {
-        LOG_SYSERR << "accept EAGAIN";
+    for ( ; ; ) {
+        struct sockaddr_in clnt_addr;
+        socklen_t len = sizeof(clnt_addr);
+        int connfd = ::accept(listenfd_, (struct sockaddr *) &clnt_addr, &len);
+        if (connfd == -1) {
+            auto saved_errno = errno;
+            switch (saved_errno) {
+                case EINTR: // interrupted by a signal that was caught before a valid connection arrived.
+                case ECONNABORTED: // a connection has been aborted.
+                    continue;
+
+                case EAGAIN: // same as EWOULDBLOCK, if no pending connections are present on the incomplete connection queue.
+                    //channel_->readWhenReady();
+                    break;
+
+                case EBADF:
+                case EFAULT:
+                case EINVAL:
+                case EMFILE:
+                case ENFILE:
+                case ENOBUFS:
+                case ENOMEM:
+                case ENOTSOCK:
+                case EOPNOTSUPP:
+                case EPROTO:
+                case EPERM:
+                    LOG_SYSERR << "unexpected error of accept.";
+                    break;
+
+                default: // various Linux kernels can return other errors.
+                    LOG_SYSERR << "unknown error of accept.";
+                    break;
+            }
+        }
+
+        if (connfd >= 0) {
+            if (acceptor_cb_) {
+                acceptor_cb_(connfd); // HTTPService::newConnection(int connfd)
+            } else {
+                wrapper::close(connfd);
+            }
+        }
     }
-    LOG_TRACE << "got a new connection.";
-    accept_cb_(connfd);
 }
 
 }

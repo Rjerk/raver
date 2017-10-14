@@ -1,6 +1,7 @@
 #include "HTTPConnection.h"
 #include "Channel.h"
 #include "HTTPService.h"
+#include "ServiceManager.h"
 #include "IOManager.h"
 #include "../base/Utils.h"
 #include "../base/Logger.h"
@@ -112,51 +113,51 @@ void handleHTTPCallback(const HTTPRequest& request, HTTPResponse* resp)
 }
 
 HTTPConnection::HTTPConnection(HTTPService* service, int connfd)
-    : service_(service), connfd_(connfd), done(false), channel_(nullptr),
-      in_(), out_(), request_(), response_(false), parser_(), cb_(detail::handleHTTPCallback)
+    : service_(service),
+      state_(kConnecting),
+      connfd_(connfd),
+      done_(false),
+      channel_(new Channel(service_->serviceManager()->ioManager(), connfd)),
+      input_buffer_(),
+      output_buffer_(),
+      request_(),
+      response_(false),
+      parser_()
 {
-    LOG_TRACE << "HTTPConnection ctor";
-    channel_ = service_->ioManager()->newChannel(connfd, std::bind(&HTTPConnection::doRead, this),
-                                                         std::bind(&HTTPConnection::doWrite, this));
-    channel_->read();
+    LOG_TRACE << "HTTPConnection ctor. fd = " << connfd_;
+    channel_->setReadCallback(std::bind(&HTTPConnection::handleRead, this));
+    channel_->setWriteCallback(std::bind(&HTTPConnection::handleWrite, this));
+    channel_->setErrorCallback(std::bind(&HTTPConnection::handleError, this));
+    channel_->setErrorCallback(std::bind(&HTTPConnection::handleClose, this));
+
+    const int opt = 1;
+    ::setsockopt(connfd_, SOL_SOCKET, SO_KEEPALIVE, &opt, static_cast<socklen_t>(sizeof(opt)));
 }
 
 HTTPConnection::~HTTPConnection()
 {
     LOG_TRACE << "HTTPConnection dtor" << this;
-    if (service_) {
-        service_->ioManager()->removeChannel(channel_);
-    }
-    close();
+    assert(state_ == kDisconnected);
+    wrapper::close(connfd_);
 }
 
-void HTTPConnection::close()
-{
-    if (connfd_ >= 0) {
-        ::close(connfd_);
-    }
-}
-
-void HTTPConnection::startRead()
-{
-    // we get a new connection, so socket can be read.
-    channel_->read();
-}
-
-void HTTPConnection::doRead()
+void HTTPConnection::handleRead()
 {
     LOG_TRACE << "doRead begin.";
-    int saved_errno;
-    ssize_t n = in_.readFd(connfd_, &saved_errno);
-    LOG_TRACE << "in_ size: " << in_.size();
+    int saved_errno = 0;
+    ssize_t n = input_buffer_.readFd(connfd_, &saved_errno);
+    LOG_TRACE << "in_ size: " << input_buffer_.size();
 
-    if (n == 0) {
-        LOG_DEBUG << "in_.readFd: n == 0";
-        return ;
-    } else if (n < 0) {
+    if (n > 0) {
+        LOG_TRACE << "doRead: n > 0, message_callback()";
+        messageCallback_(*this, &input_buffer_);
+    } else if (n == 0) {
+        LOG_TRACE << "doRead: n == 0, handleClose()";
+        handleClose();
+    } else {
         errno = saved_errno;
         LOG_SYSERR << "doRead: n < 0";
-        return ;
+        handleError();
     }
 
     if (!handleRequest()) {
@@ -164,18 +165,36 @@ void HTTPConnection::doRead()
         return ;
     }
 
-    in_.clear();
-
-
-    LOG_TRACE << "doRead end";
 }
 
-void HTTPConnection::doWrite()
+void HTTPConnection::handleWrite()
 {
     LOG_TRACE << "doWrite begin " << this;
 
+    if (channel_->isWriting()) {
+        ssize_t n;
+        if ((n = wrapper::write(channel_->fd(), output_buffer_.beginRead(), output_buffer_.readableBytes())) > 0) {
+            output_buffer_.retrieve(n);
+            if (output_buffer_.readableBytes() == 0) {
+                channel_->disableWriting();
+                if (writeCompleteCallback_) {
+                    writeCompleteCallback_(*this);
+                }
+
+                if (state_ == kDisconnecting) {
+                    shutdown();
+                }
+            }
+        }
+
+    } else {
+        LOG_TRACE << "Connection fd: " << channel_->fd()
+                  << " is down, no more writing.";
+    }
+
+    /*
     int writen_bytes = 0;
-    while ((writen_bytes = ::write(connfd_, out_.beginRead(), out_.readableBytes())) > 0) {
+    while ((writen_bytes = wrapper::write(connfd_, out_.beginRead(), out_.readableBytes())) > 0) {
         LOG_TRACE << "write connfd_: " << writen_bytes;
         LOG_TRACE << "readableBytes: " << out_.readableBytes();
         assert(static_cast<size_t>(writen_bytes) <= out_.readableBytes());
@@ -199,18 +218,34 @@ void HTTPConnection::doWrite()
     }
 
     out_.clear();
-
     service_->ioManager()->poller()->updateEvent(EPOLLOUT, EPOLL_CTL_DEL, channel_);
+    */
 
     LOG_TRACE << "doWrite end";
+}
+
+void HTTPConnection::handleError()
+{
+    LOG_ERROR << "handleError";
+}
+
+void HTTPConnection::handleClose()
+{
+    LOG_TRACE << "fd = " << channel_->fd();
+    assert(state_ == kConnected || state_ == kDisconnecting);
+
+    setState(kDisconnected);
+    channel_->disableAll();
+
+    // callback
 }
 
 bool HTTPConnection::parseRequestOK()
 {
     LOG_TRACE << "";
     request_.clear();
-    in_.append("\0", 1);
-    bool ret = parser_.parseRequest(&in_, &request_);
+    input_buffer_.append("\0", 1);
+    bool ret = parser_.parseRequest(&input_buffer_, &request_);
     if (!ret) { // send 404 bad request.
         LOG_ERROR << "Parse HTTP request error.";
         return false;
@@ -235,7 +270,7 @@ bool HTTPConnection::handleRequest()
                     && connection != "keep-alive");
         cb_(request_, &response_);
         response_.setCloseConnection(close_req);
-        response_.appendToBuffer(&out_); // write respond to output buffer.
+        response_.appendToBuffer(&output_buffer_); // write respond to output buffer.
         return true;
     } else {
         return false;

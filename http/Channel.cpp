@@ -1,39 +1,88 @@
 #include "Channel.h"
 #include "IOManager.h"
-#include "../base/Utils.h"
+#include "../base/Logger.h"
+//#include "../base/ThreadPool.h"
+
+#include <cassert>
 
 namespace raver {
 
-void Channel::read()
-{
-    getPool()->addTask(readcb_);
-}
-
-void Channel::write()
-{
-    getPool()->addTask(writecb_);
-}
-
-Channel::Channel(IOManager* io, int fd,
-                 const Callback& readcb,
-                 const Callback& writecb)
-    : fd_(fd), io_(io), closed_fd_(false),
-      readcb_(readcb), writecb_(writecb), mtx_(),
-      can_read_(false), can_write_(false), waiting_read_(false), waiting_write_(false)
+Channel::Channel(IOManager* iomanager, int fd)
+    : iomanager_(iomanager),
+      fd_(fd),
+      events_(0),
+      revents_(0),
+      index_(-1),
+      event_handling_(false)
 {
     LOG_TRACE << "Channel ctor";
-    wrapper::setNonBlockAndCloseOnExec(fd_);
-    wrapper::setKeepAlive(fd_, true);
 }
 
 Channel::~Channel()
 {
     LOG_TRACE << "Channel dtor";
+    assert(!event_handling_);
 }
 
-ThreadPool* Channel::getPool()
+void Channel::handleEvent()
 {
-    return io_->pool_.get();
+    event_handling_ = true;
+
+    LOG_TRACE << "handling revents...";
+
+    if ((revents_ & EPOLLHUP) && !(revents_ & EPOLLIN)) {
+        if (closecb_) {
+            closecb_();
+        }
+    }
+
+    if (revents_ & EPOLLERR) {
+        if (errorcb_) {
+            errorcb_();
+        }
+    }
+
+    if (revents_ & (EPOLLIN | EPOLLPRI | EPOLLRDHUP)) {
+        if (readcb_) {
+            readcb_();
+        }
+    }
+
+    if (revents_ & EPOLLOUT) {
+        if (writecb_) {
+            writecb_();
+        }
+    }
+
+    event_handling_ = false;
+}
+
+void Channel::remove()
+{
+    LOG_TRACE << "remove channel.";
+    assert(isNoneEvent());
+    iomanager_->removeChannel(this);
+}
+
+void Channel::update()
+{
+    iomanager_->updateChannel(this);
+}
+
+void Channel::readWhenReady()
+{
+}
+
+void Channel::writeWhenReady()
+{
+}
+
+void Channel::readIfWaiting()
+{
+}
+
+void Channel::writeIfWaiting()
+{
 }
 
 }

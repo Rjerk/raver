@@ -9,29 +9,29 @@ namespace raver {
 
 class IOManager;
 class Channel;
+
 using AcceptorCallback = std::function<void (int)>;
 
-class Acceptor : noncopyable {
+class Acceptor {
 public:
-    Acceptor(IOManager* io, int port, const AcceptorCallback& cb);
+    Acceptor(IOManager* iomanager, int port, const AcceptorCallback& acceptor_cb);
 
     ~Acceptor();
 
-    void startAccept();
-
-    void close();
-
 private:
     void doAccept();
-    void doNothing() {}
 
 private:
+    IOManager* iomanager_; // not own it.
     int listenfd_;
-    std::unique_ptr<IOManager> manager_;
-    Channel* channel_; // not own it.
-    AcceptorCallback accept_cb_;
+
+    std::unique_ptr<Channel> channel_;
+    AcceptorCallback acceptor_cb_;
 };
 
+
 }
+
+
 
 #endif

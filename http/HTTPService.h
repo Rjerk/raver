@@ -2,43 +2,43 @@
 #define HTTP_SERVICE_H
 
 #include "../base/noncopyable.h"
-#include "../base/FileCache.h"
 
-#include <functional>
-#include <string>
 #include <vector>
-#include <mutex>
-#include <memory>
+#include <functional>
 
 namespace raver {
 
 class ServiceManager;
-class IOManager;
-class HTTPRespond;
 class HTTPConnection;
-
-using RespondCallback = std::function<void (HTTPRespond* )>;
-using MutexGuard = std::lock_guard<std::mutex>;
+class Buffer;
+class HTTPRequest;
+class HTTPResponse;
 
 class HTTPService : noncopyable {
 public:
-    HTTPService(int port, ServiceManager* sm); // serve in a port and cooperate with the manager.
+    HTTPService(ServiceManager* manager, int port);
 
     ~HTTPService();
 
-    void stop(); // tell manager I'm done.
+    void newConnection(int connfd);
 
-    IOManager* ioManager() const;
-private:
-    void afterAccept(int port);
+    ServiceManager* serviceManager() const { return service_manager_; }
 
 private:
-    ServiceManager* manager_; // not own it.
+    void onConnection(const HTTPConnection& conn);
+    void onMessage(const HTTPConnection& conn, Buffer* buffer);
 
-    std::vector<HTTPConnection*> connections_;
-    std::mutex mtx_vec_;
+private:
+    ServiceManager* service_manager_; // not own it.
+
+    std::vector<HTTPConnection*> conns_;
+
+    using HTTPCallback = std::function< void (const HTTPRequest&, HTTPResponse*)>;
+    HTTPCallback httpCallback_;
+
 };
 
 }
+
 
 #endif
