@@ -18,7 +18,7 @@ $ ./server
 - epoll + threadpoll 实现并发
 - 用 `SO_REUSEPORT` 允许多个套接字绑定在同一主机的同一个端口上，在内核层次上实现进行简单的负载均衡
 - 使用基于对象编程思想
-- 使用 C++ 11
+- C++ 11
 
 ## benchmark
 
