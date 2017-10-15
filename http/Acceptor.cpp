@@ -11,6 +11,8 @@ namespace raver {
 Acceptor::Acceptor(IOManager* iomanager, int port, const AcceptorCallback& acceptor_cb)
     : iomanager_(iomanager), listenfd_(-1), channel_(), acceptor_cb_(acceptor_cb)
 {
+    LOG_TRACE << "Acceptor ctor";
+
     listenfd_ = wrapper::socket(AF_INET, SOCK_STREAM, 0);
 
     wrapper::setNonBlockAndCloseOnExec(listenfd_);
@@ -22,18 +24,22 @@ Acceptor::Acceptor(IOManager* iomanager, int port, const AcceptorCallback& accep
     serv_addr.sin_addr.s_addr = INADDR_ANY;
 
     int opt = 1;
-    ::setsockopt(listenfd_, SOL_SOCKET, SO_REUSEADDR, (const void*)&opt, sizeof(opt));
-    ::setsockopt(listenfd_, SOL_SOCKET, SO_REUSEPORT, (const void*)&opt, sizeof(opt));
+    ::setsockopt(listenfd_, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    ::setsockopt(listenfd_, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
 
-    wrapper::bindOrDie(listenfd_, (struct sockaddr*) &serv_addr);
-    wrapper::listenOrDie(listenfd_);
+    wrapper::bindOrDie(listenfd_, reinterpret_cast<struct sockaddr*>(&serv_addr));
 
     channel_.reset(new Channel(iomanager_, listenfd_));
     channel_->setReadCallback(std::bind(&Acceptor::doAccept, this));
+
+    wrapper::listenOrDie(listenfd_);
+
+    channel_->enableReading();
 }
 
 Acceptor::~Acceptor()
 {
+    LOG_TRACE << "Acceptor dtor";
     channel_->disableAll();
     channel_->remove();
     wrapper::close(listenfd_);
@@ -41,19 +47,21 @@ Acceptor::~Acceptor()
 
 void Acceptor::doAccept()
 {
+    LOG_TRACE << "start accept, listenfd: " << listenfd_;
     for ( ; ; ) {
         struct sockaddr_in clnt_addr;
         socklen_t len = sizeof(clnt_addr);
-        int connfd = ::accept(listenfd_, (struct sockaddr *) &clnt_addr, &len);
+        int connfd = ::accept4(listenfd_, reinterpret_cast<struct sockaddr*>(&clnt_addr), &len, SOCK_NONBLOCK | SOCK_CLOEXEC);
         if (connfd == -1) {
             auto saved_errno = errno;
             switch (saved_errno) {
                 case EINTR: // interrupted by a signal that was caught before a valid connection arrived.
                 case ECONNABORTED: // a connection has been aborted.
+                    LOG_TRACE << "EINTR or ECONNABORTED in accept4";
                     continue;
 
                 case EAGAIN: // same as EWOULDBLOCK, if no pending connections are present on the incomplete connection queue.
-                    //channel_->readWhenReady();
+                    LOG_TRACE << "got EAGAIN in accept4";
                     break;
 
                 case EBADF:
@@ -74,14 +82,14 @@ void Acceptor::doAccept()
                     LOG_SYSERR << "unknown error of accept.";
                     break;
             }
-        }
-
-        if (connfd >= 0) {
+        } else if (connfd >= 0) {
             if (acceptor_cb_) {
+                LOG_TRACE << "got a new connection.";
                 acceptor_cb_(connfd); // HTTPService::newConnection(int connfd)
             } else {
                 wrapper::close(connfd);
             }
+            return ;
         }
     }
 }

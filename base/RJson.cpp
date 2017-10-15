@@ -252,20 +252,20 @@ parse_code RJSON::parseStringRaw(char** str, size_t* len)
 		switch (ch) {
 			case '\"':
 				*len = top_ - pos;
-				*str = (char*) popJson (*len);
+				*str = static_cast<char*>(popJson (*len));
 				//*str[*len] = '\0';
 				json_ = p;
 				return PARSE_OK;
 			case '\\': {
 				switch (*p++) {
-					case '\"': *((char*) pushJson(sizeof(ch))) = '\"'; break;
-					case '\\': *((char*) pushJson(sizeof(ch))) = '\\'; break;
-					case '/':  *((char*) pushJson(sizeof(ch))) = '/';  break;
-					case 'b':  *((char*) pushJson(sizeof(ch))) = '\b'; break;
-					case 'f':  *((char*) pushJson(sizeof(ch))) = '\f'; break;
-					case 'n':  *((char*) pushJson(sizeof(ch))) = '\n'; break;
-					case 'r':  *((char*) pushJson(sizeof(ch))) = '\r'; break;
-					case 't':  *((char*) pushJson(sizeof(ch))) = '\t'; break;
+					case '\"': *(static_cast<char*>(pushJson(sizeof(ch)))) = '\"'; break;
+					case '\\': *(static_cast<char*>(pushJson(sizeof(ch)))) = '\\'; break;
+					case '/':  *(static_cast<char*>(pushJson(sizeof(ch)))) = '/';  break;
+					case 'b':  *(static_cast<char*>(pushJson(sizeof(ch)))) = '\b'; break;
+					case 'f':  *(static_cast<char*>(pushJson(sizeof(ch)))) = '\f'; break;
+					case 'n':  *(static_cast<char*>(pushJson(sizeof(ch)))) = '\n'; break;
+					case 'r':  *(static_cast<char*>(pushJson(sizeof(ch)))) = '\r'; break;
+					case 't':  *(static_cast<char*>(pushJson(sizeof(ch)))) = '\t'; break;
 					case 'u': {
 						unsigned u, u2;
 
@@ -306,11 +306,11 @@ parse_code RJSON::parseStringRaw(char** str, size_t* len)
 				top_ = pos;
 				return PARSE_MISS_QUOTATION_MARK;
 			default:
-				if ((unsigned char) ch < 0x20) {
+				if (static_cast<unsigned char>(ch) < 0x20) {
 					top_ = pos;
 					return PARSE_INVALID_STRING_CHAR;
 				}
-				*((char*) pushJson(sizeof(ch))) = ch;
+				*(static_cast<char*>(pushJson(sizeof(ch)))) = ch;
 		}
 	}
 }
@@ -336,7 +336,7 @@ void* RJSON::pushJson(size_t sz)
 	stack_ = tmp;
 	tmp = nullptr;
 
-	int t = top_;
+	auto t = top_;
 	top_ += sz;
 	return stack_ + t;
 }
@@ -435,7 +435,7 @@ parse_code RJSON::parseObject(json_value_t* v)
 
     delete pair.str_;
 	for (size_t i = 0; i < sz; ++i) {
-		auto p = (json_pair_t *) popJson(sizeof(json_pair_t)); (void) p;
+		auto p = static_cast<json_pair_t*>(popJson(sizeof(json_pair_t))); (void) p;
 		delete p->str_;
         detail::freeValue(&(p->value_));
 	}
@@ -488,7 +488,7 @@ parse_code RJSON::parseArray(json_value_t* v)
 
 
 	for (size_t i = 0; i < sz; ++i) {
-        detail::freeValue((json_value_t *) popJson(sizeof(json_value_t)));
+        detail::freeValue(static_cast<json_value_t*>(popJson(sizeof(json_value_t))));
 	}
 
     v->type_ = RJSON_NULL;
@@ -539,7 +539,7 @@ void RJSON::stringifyValue(json_value_t* v)
 			// %g print the number with as many as digits as needed for precision,
 			// preferring exponetial syntax when the numbers are small or huge (1e-5 rather than 0.00005)
 			// and skipping any trailing zeroes (1 rather than 1.0000).
-			top_ -= (32 - sprintf((char*)pushJson(32), "%.17g", v->getNumber()));
+			top_ -= (32 - sprintf(static_cast<char*>(pushJson(32)), "%.17g", v->getNumber()));
 			break;
 		case RJSON_STRING:
 			stringifyString(v->getString()->data(), v->getString()->size());
@@ -578,7 +578,7 @@ void RJSON::stringifyString(const char* str, size_t len)
 	size_t size;
 	char* head = nullptr;
 	char* p = nullptr;
-	p = head = (char *) pushJson(size = len * 6 + 2); // if there's len unicode characters. 2 is for quotation marks.
+	p = head = static_cast<char*>(pushJson(size = len * 6 + 2)); // if there's len unicode characters. 2 is for quotation marks.
 	*p++ = '"';
 	for (size_t i = 0; i < len; ++i) {
 		auto ch = static_cast<unsigned char>(str[i]);
@@ -611,26 +611,26 @@ string RJSON::generator()
 	assert(value_.type_ == RJSON_OBJECT || value_.type_ == RJSON_ARRAY);
 	stringifyValue(&value_);
 	auto sz = top_;
-	return string((char *) popJson(top_), sz);
+	return string(static_cast<char*>(popJson(top_)), sz);
 }
 
 void RJSON::encodeUTF8(unsigned u)
 {
 	if (u <= 0x7F) { // 0xxxxxxx
-		*((char*) pushJson(sizeof(char))) = (u & 0xFF);
+		*(static_cast<char*>(pushJson(sizeof(char)))) = static_cast<char>(u & 0xFF);
 	} else if (u <= 0x7FF) { // 110xxxxx 10xxxxxx
-		*((char*) pushJson(sizeof(char))) = (0xC0 | ((u >> 6) & 0xFF));
-		*((char*) pushJson(sizeof(char))) = (0x80 | ( u       & 0x3F));
+		*(static_cast<char*>(pushJson(sizeof(char)))) = static_cast<char>(0xC0 | ((u >> 6) & 0xFF));
+		*(static_cast<char*>(pushJson(sizeof(char)))) = static_cast<char>(0x80 | ( u       & 0x3F));
 	} else if (u <= 0xFFFF) { // 1110xxxx 10xxxxxx 10xxxxxx
-		*((char*) pushJson(sizeof(char))) = (0xE0 | ((u >> 12) & 0xFF));
-		*((char*) pushJson(sizeof(char))) = (0x80 | ((u >>  6) & 0x3F));
-		*((char*) pushJson(sizeof(char))) = (0x80 | ( u        & 0x3F));
+		*(static_cast<char*>(pushJson(sizeof(char)))) = static_cast<char>(0xE0 | ((u >> 12) & 0xFF));
+		*(static_cast<char*>(pushJson(sizeof(char)))) = static_cast<char>(0x80 | ((u >>  6) & 0x3F));
+		*(static_cast<char*>(pushJson(sizeof(char)))) = static_cast<char>(0x80 | ( u        & 0x3F));
 	} else {
 		assert(u <= 0x10FFFF); // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-		*((char*) pushJson(sizeof(char))) = (0xF0 | ((u >> 18) & 0xFF));
-		*((char*) pushJson(sizeof(char))) = (0x80 | ((u >> 12) & 0x3F));
-		*((char*) pushJson(sizeof(char))) = (0x80 | ((u >>  6) & 0x3F));
-		*((char*) pushJson(sizeof(char))) = (0x80 | ( u        & 0x3F));
+		*(static_cast<char*>(pushJson(sizeof(char)))) = static_cast<char>(0xF0 | ((u >> 18) & 0xFF));
+		*(static_cast<char*>(pushJson(sizeof(char)))) = static_cast<char>(0x80 | ((u >> 12) & 0x3F));
+		*(static_cast<char*>(pushJson(sizeof(char)))) = static_cast<char>(0x80 | ((u >>  6) & 0x3F));
+		*(static_cast<char*>(pushJson(sizeof(char)))) = static_cast<char>(0x80 | ( u        & 0x3F));
 	}
 }
 

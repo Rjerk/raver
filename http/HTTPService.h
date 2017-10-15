@@ -2,7 +2,7 @@
 #define HTTP_SERVICE_H
 
 #include "../base/noncopyable.h"
-
+#include "../base/FileCache.h"
 #include <vector>
 #include <functional>
 
@@ -24,9 +24,12 @@ public:
 
     ServiceManager* serviceManager() const { return service_manager_; }
 
+    static FileCache* fileCache() { return &filecache_; }
+
 private:
     void onConnection(const HTTPConnection& conn);
-    void onMessage(const HTTPConnection& conn, Buffer* buffer);
+
+    void onMessage(HTTPConnection& conn, Buffer* buffer);
 
 private:
     ServiceManager* service_manager_; // not own it.
@@ -36,6 +39,7 @@ private:
     using HTTPCallback = std::function< void (const HTTPRequest&, HTTPResponse*)>;
     HTTPCallback httpCallback_;
 
+    static FileCache filecache_;
 };
 
 }

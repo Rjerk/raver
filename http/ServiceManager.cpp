@@ -23,7 +23,7 @@ IgnoreSigPipe init_obj;
 
 
 ServiceManager::ServiceManager(int thread_num)
-    : iomanager_(new IOManager{thread_num}), acceptor_{nullptr}
+    : iomanager_(new IOManager{thread_num, this}), acceptor_{nullptr}
 {
     LOG_TRACE << "ServiceManager ctor";
 }

@@ -24,7 +24,6 @@ public:
     void registerAcceptor(int port, const AcceptorCallback& acceptor_cb);
 
     IOManager* ioManager() const { return iomanager_.get(); }
-private:
 
 private:
     std::unique_ptr<IOManager> iomanager_;

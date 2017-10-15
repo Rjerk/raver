@@ -70,7 +70,7 @@ int accept(int sockfd, struct sockaddr_in6* addr)
     socklen_t addrlen = static_cast<socklen_t>(sizeof(*addr));
     LOG_TRACE << "listen fd: " << sockfd;
     int connfd = ::accept(sockfd,
-                static_cast<struct sockaddr*>((void*)addr), &addrlen);
+                static_cast<struct sockaddr*>(static_cast<void*>(addr)), &addrlen);
     //setNonBlockAndCloseOnExec(connfd);
     if (connfd < 0) {
         auto saved_errno = errno;

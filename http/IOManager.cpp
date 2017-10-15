@@ -1,6 +1,6 @@
 #include "../base/Logger.h"
 #include "../base/ThreadPool.h"
-
+#include "ServiceManager.h"
 #include "IOManager.h"
 #include "Channel.h"
 #include "EPoller.h"
@@ -10,8 +10,9 @@
 
 namespace raver {
 
-IOManager::IOManager(int thread_num)
-    : threadpool_(new ThreadPool(thread_num)),
+IOManager::IOManager(int thread_num, ServiceManager* service)
+    : service_manager_(service),
+      threadpool_(new ThreadPool(thread_num)),
       epoller_(new EPoller(this)),
       event_handling_(false),
       quit_(false),
@@ -28,17 +29,17 @@ IOManager::~IOManager()
 
 void IOManager::run()
 {
+    LOG_TRACE << "event handing begin.";
     while (!quit_) {
         active_channels_.clear();
         epoller_->poll(&active_channels_);
 
         event_handling_ = true;
-        LOG_TRACE << "event handing begin.";
         for (auto it = active_channels_.begin(); it != active_channels_.end(); ++it) {
+            LOG_TRACE << "handling active channel.";
             current_active_channel_ = *it;
             current_active_channel_->handleEvent();
         }
-        LOG_TRACE << "event handing end.";
         current_active_channel_ = nullptr;
         event_handling_ = false;
     }

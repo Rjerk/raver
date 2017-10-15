@@ -14,11 +14,13 @@ int main()
     auto ret = parser.parseJson(); (void) ret;
     assert(ret == PARSE_OK);
 
-    auto value = parser.getValue();
-    assert(value->JsonValue() == RJON_OBJECT);
+    auto value = parser.getValue(); (void) value;
+    assert(value->getType() == RJSON_OBJECT);
 
-    auto thread_num = value->getValueFromObject("thread_num")->getNumber();
-    auto port = value->getValueFromObject("port")->getNumber();
+    int thread_num = 10;
+    //int thread_num = static_cast<int>(value->getValueFromObject("thread_num")->getNumber());
+    //int port = static_cast<int>(value->getValueFromObject("port")->getNumber());
+    int port = 8888;
 
     ServiceManager manager(thread_num);
 

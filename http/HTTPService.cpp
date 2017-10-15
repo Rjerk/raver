@@ -1,4 +1,5 @@
 #include "../base/Logger.h"
+#include "../base/RJson.h"
 #include "HTTPService.h"
 #include "ServiceManager.h"
 #include "IOManager.h"
@@ -6,6 +7,9 @@
 #include "HTTPResponse.h"
 #include "Acceptor.h"
 #include "HTTPConnection.h"
+
+#include <unistd.h>
+#include <sys/stat.h>
 
 namespace raver {
 
@@ -35,10 +39,82 @@ void send501(HTTPResponse* resp)
     resp->setBody(msg("501 Not Implemented"));
 }
 
-};
+void handleHTTPCallback(const HTTPRequest& request, HTTPResponse* resp)
+{
+    LOG_TRACE << "handleHTTPCallback";
+    if (request.getMethod() != HTTPRequest::Method::Get
+                    && request.getMethod() != HTTPRequest::Method::Post) {
+            LOG_TRACE << "neither get nor post method";
+            send501(resp);
+            return ;
+        }
+
+    bool post = false;
+    if (request.getMethod() == HTTPRequest::Method::Post) {
+            post = true;
+        }
+
+    /*
+    rjson::RJSON parser(readFile("config.json"));
+    parser.parseJson();
+    auto doc_root = *(parser.getValue()->getValueFromObject("doc-root")->getString());
+    */
+    std::string doc_root = "./www/";
+    LOG_TRACE << "root: " << doc_root;
+    LOG_TRACE << "req: " << request.getPath();
+    auto path = doc_root + request.getPath().substr(1);
+    LOG_TRACE << "path: " << path;
+
+    if (path.at(path.size()-1) == '/') {
+        //path += *(parser.getValue()->getValueFromObject("index-page")->getString());
+        path += "index.html";
+    }
+    LOG_TRACE << "use path: " << path;
+
+    struct stat st;
+    bool can_exe = false;
+    if (::stat(path.c_str(), &st) == -1) {
+        LOG_TRACE << "find file failed. use default";
+        send404(resp);
+        return ;
+    } else {
+        if ((st.st_mode & S_IFMT) == S_IFDIR) {
+            LOG_TRACE << "path is a directory";
+            //path += *(parser.getValue()->getValueFromObject("index-page")->getString());
+            path += "index.html";
+        }
+        if ((st.st_mode & S_IXUSR) || (st.st_mode & S_IXGRP) || (st.st_mode & S_IXOTH)) {
+            LOG_TRACE << "file is executable";
+            can_exe = true;
+        }
+    }
+    if (post) {
+        LOG_TRACE << "use POST";
+        // TODO: cgi program.
+        LOG_TRACE << "execute cgi-program";
+        if (can_exe) {
+            ::execl(path.c_str(), path.c_str(), nullptr);
+        }
+    } else {
+        //Buffer* buf = nullptr;
+        //HTTPService::fileCache()->pin(path.c_str(), &buf);
+        LOG_TRACE << "use GET";
+        resp->setStatusCode(HTTPResponse::HTTPStatusCode::OK200);
+        resp->setStatusMessage("OK");
+        resp->setCloseConnection(true);
+        //resp->setBody(std::string(buf->beginRead(), buf->size()));
+        resp->setBody(readFile(path.c_str()));
+    }
+}
+
+} // namespace detail
+
+FileCache HTTPService::filecache_{50 << 20};
 
 HTTPService::HTTPService(ServiceManager* manager, int port)
-    : service_manager_(manager)
+    : service_manager_(manager),
+      conns_(),
+      httpCallback_(detail::handleHTTPCallback)
 {
     service_manager_->registerAcceptor(port, std::bind(&HTTPService::newConnection, this, std::placeholders::_1));
     LOG_TRACE << "HTTPService ctor";
@@ -66,8 +142,9 @@ void HTTPService::onConnection(const HTTPConnection&)
     LOG_TRACE << "got a request.";
 }
 
-void HTTPService::onMessage(const HTTPConnection& conn, Buffer* buffer)
+void HTTPService::onMessage(HTTPConnection& conn, Buffer* buffer)
 {
+    LOG_TRACE << "start handle the request.";
     auto parser = conn.getParser();
 
     if (!parser.parseRequest(buffer)) {

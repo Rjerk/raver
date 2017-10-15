@@ -12,6 +12,7 @@ namespace raver {
 class Channel;
 class ThreadPool;
 class EPoller;
+class ServiceManager;
 
 class IOManager {
 public:
@@ -19,7 +20,7 @@ public:
     using WriteCallback = std::function<void ()>;
     using TaskType = std::function<void ()>;
 
-    explicit IOManager(int thread_num);
+    IOManager(int thread_num, ServiceManager* service);
 
     ~IOManager();
 
@@ -32,6 +33,7 @@ public:
     void addTask(const TaskType& task);
 
 private:
+    ServiceManager* service_manager_; // not own it.
     std::unique_ptr<ThreadPool> threadpool_;
     std::unique_ptr<EPoller> epoller_;
 

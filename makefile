@@ -1,8 +1,8 @@
 objects = main.o ServiceManager.o HTTPService.o HTTPParser.o HTTPRequest.o \
-		  HTTPResponse.o HTTPConnection.o Channel.o Acceptor.o IOManager.o Poller.o \
-		  ThreadPool.o Timer.o TimeStamp.o Logger.o Utils.o RJson.o FileCache.o
+		  HTTPResponse.o HTTPConnection.o Channel.o Acceptor.o IOManager.o EPoller.o \
+		  ThreadPool.o Logger.o Utils.o RJson.o FileCache.o Buffer.o
 
-flags = -Wall -O -std=c++11 -pthread
+flags = -Wall -Wextra -Werror -Wconversion -Wno-unused-parameter -O -std=c++11 -pthread
 
 all: server
 
@@ -39,17 +39,17 @@ Acceptor.o: http/Acceptor.cpp
 IOManager.o: http/IOManager.cpp
 	g++ $(flags) -c http/IOManager.cpp
 
-Poller.o: http/Poller.cpp
-	g++ $(flags) -c http/Poller.cpp
+EPoller.o: http/EPoller.cpp
+	g++ $(flags) -c http/EPoller.cpp
 
 ThreadPool.o: base/ThreadPool.cpp
 	g++ $(flags) -c base/ThreadPool.cpp
 
-Timer.o: base/Timer.cpp
-	g++ $(flags) -c base/Timer.cpp
+#Timer.o: base/Timer.cpp
+#	g++ $(flags) -c base/Timer.cpp
 
-TimeStamp.o: base/TimeStamp.cpp
-	g++ $(flags) -c base/TimeStamp.cpp
+#TimeStamp.o: base/TimeStamp.cpp
+#	g++ $(flags) -c base/TimeStamp.cpp
 
 Logger.o: base/Logger.cpp
 	g++ $(flags) -c base/Logger.cpp
@@ -59,6 +59,9 @@ RJson.o: base/RJson.cpp
 
 FileCache.o: base/FileCache.cpp 
 	g++ $(flags) -c base/FileCache.cpp
+
+Buffer.o: base/Buffer.cpp 
+	g++ $(flags) -c base/Buffer.cpp
 
 Utils.o: base/Utils.cpp
 	g++ $(flags) -c base/Utils.cpp

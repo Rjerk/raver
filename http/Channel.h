@@ -54,19 +54,12 @@ public:
     int index() const { return index_; }
     void setIndex(int index) { index_ = index; }
 
-    void readWhenReady();
-
-    void writeWhenReady();
-
     void remove();
 
     int fd() const { return fd_; }
+
 private:
     void update();
-
-    void readIfWaiting();
-
-    void writeIfWaiting();
 
 private:
     static const int kNoneEvent = 0;

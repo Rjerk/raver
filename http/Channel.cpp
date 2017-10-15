@@ -69,20 +69,4 @@ void Channel::update()
     iomanager_->updateChannel(this);
 }
 
-void Channel::readWhenReady()
-{
-}
-
-void Channel::writeWhenReady()
-{
-}
-
-void Channel::readIfWaiting()
-{
-}
-
-void Channel::writeIfWaiting()
-{
-}
-
 }

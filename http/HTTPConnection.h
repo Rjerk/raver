@@ -3,7 +3,6 @@
 
 #include "../base/noncopyable.h"
 #include "../base/Buffer.h"
-#include "../base/FileCache.h"
 #include "HTTPRequest.h"
 #include "HTTPResponse.h"
 #include "HTTPParser.h"
@@ -19,7 +18,7 @@ class HTTPConnection;
 using ConnectionCallback = std::function< void (const HTTPConnection&) >;
 using CloseCallback = std::function< void (const HTTPConnection&) >;
 using WriteCompleteCallback = std::function< void (const HTTPConnection&) >;
-using MessageCallback = std::function<void (const HTTPConnection&, Buffer*) >;
+using MessageCallback = std::function<void (HTTPConnection&, Buffer*) >;
 
 using HTTPCallback = std::function<void (const HTTPRequest&, HTTPResponse*)>;
 
@@ -28,10 +27,6 @@ public:
     HTTPConnection(HTTPService* service, int connfd);
 
     ~HTTPConnection();
-
-    void startRead();
-
-    static FileCache* fileCache() { return &filecache_; }
 
     void setConnectionCallback(const ConnectionCallback& cb)
     { connectionCallback_ = cb; }
@@ -43,27 +38,27 @@ public:
     { closeCallback_ = cb; }
 
     bool connected() const
-    { return state_ == kConnected; }
+    { return state_ == State::Connected; }
 
     const HTTPParser& getParser() const
     { return parser_; }
 
-    void shutdown() const;
+    void shutdown();
 
-    void send(const std::string& request_str) const;
-
-    void send(Buffer* buffer) const;
+    void send(const char* data, size_t len);
+    void send(const std::string& msg);
+    void send(Buffer* buffer);
 
 private:
-    enum State { kDisconnected, kConnecting, kConnected, kDisconnecting };
+    enum class State { Disconnected, Connecting, Connected, Disconnecting };
+
+    void setState(State state)
+    { state_ = state; }
 
     void handleRead(); // read request.
     void handleWrite(); // write response.
     void handleClose();
     void handleError();
-
-    void setState(State state)
-    { state_ = state; }
 
     bool parseRequestOK();
 
@@ -72,7 +67,6 @@ private:
     void close();
 
 private:
-
     HTTPService* service_; // not own it.
 
     State state_;
@@ -81,7 +75,6 @@ private:
     bool done_;
     std::unique_ptr<Channel> channel_;
 
-    static FileCache filecache_;
     Buffer input_buffer_;
     Buffer output_buffer_;
 

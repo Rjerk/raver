@@ -18,6 +18,8 @@ public:
 
     ~Acceptor();
 
+    void listen();
+
 private:
     void doAccept();
 
