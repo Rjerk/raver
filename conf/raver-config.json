@@ -1,0 +1,7 @@
+{
+    "doc_root": "/data/github/raver/www/",
+    "index_page": "index.html",
+    "thread_num": 10,
+    "port": 8888,
+    "log_path": "/data/github/raver/raver.log"
+}
