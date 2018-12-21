@@ -2,11 +2,13 @@
 
 基于I/O多路复用epoll和线程池的并发HTTP服务器
 
-## 使用
+## Build
+
+需要：g++ 7.x.x，for C++17
 
 ```
-$ make
-$ ./server
+$ ./build.sh
+$ cd ./build ; ./raver
 ```
 
 通过浏览器访问该服务器 ip:8888
@@ -50,9 +52,9 @@ EPoller封装了epoll，采用level trigger。
 
 HTTPConnction使用非阻塞IO，避免阻塞在读写上，最大限度地复用thread-of-control。它拥有自己的input和output Buffer，因为TCP是一个无边界的字节流协议，服务器必须处理接收不完整的情况。当只写了一部分数据时，去注册EPOLLOUT事件，一旦socket可写就立即发送数据;当读数据不完整时会等数据读完再处理，不会触发不间断的EPOLLIN事件，造成 busy-loop。实现参考了[muduo](https://github.com/chenshuo/muduo) 网络库的实现。
 
-## TODO
+## 特性
 
-- [x] 用`std::unique_ptr`管理资源，解决存在的内存泄露问题
+- [x] mordern cpp, C++17 support
 - [ ] 支持动态内容
 - [x] JSON 配置服务器
 - [x] 增加文件缓存，便于热点文件的快速访问
