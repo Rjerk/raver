@@ -1,11 +1,12 @@
-#include "Utils.h"
 #include <fcntl.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <cerrno>
 #include <cstring>
-#include "Logger.h"
+#include <string_view>
+#include <raver/base/Utils.h>
+#include <raver/base/Logger.h>
 
 namespace utils {
 
@@ -137,27 +138,24 @@ int epoll_wait(int epfd, struct epoll_event* events, int maxevents,
   return nfds;
 }
 
-std::string getFileExtension(const std::string& path) {
-  size_t pos;
-  if ((pos = path.find_last_of('.')) != std::string::npos) {
-    return std::string(path, pos);
+std::string GetFileExtension(std::string_view path) {
+  if (size_t pos = path.find_last_of('.'); pos != std::string_view::npos) {
+    return std::string{path.data(), pos};
   }
-  return "";
+  return std::string{};
 }
 
-void getContentType(const std::string& extension, std::string& content_type) {
+void GetContentType(const std::string& extension, std::string& content_type) {
   content_type.clear();
   std::ifstream mimefile("../conf/mime.types");
   std::string line;
-  LOG_INFO << "start";
   while (getline(mimefile, line)) {
-    LOG_INFO << line;
     if (line[0] != '=') {
       std::stringstream line_stream(line);
 
       content_type.clear();
       line_stream >> content_type;
-      LOG_INFO << "cont:" << content_type;
+
       std::string ext;
       while (line_stream >> ext) {
         if (ext == extension) {
@@ -169,11 +167,11 @@ void getContentType(const std::string& extension, std::string& content_type) {
   content_type = "text/plain";
 }
 
-std::string ReadFile(const std::string& filename) {
-  std::ifstream t{filename};
-  std::stringstream buffer;
-  buffer << t.rdbuf();
-  return buffer.str();
+std::string ReadFile(std::string_view filename) {
+  std::ifstream in{filename.data()};
+  return static_cast<const std::stringstream&>(
+           std::stringstream{} << in.rdbuf()
+         ).str();
 }
 
 }  // namespace utils

@@ -74,6 +74,8 @@ void JsonValue::setPair(json_pair_t* pair) { pair_ = pair; }
 json_value_t* JsonValue::getArray() const { return elem_; }
 
 JsonValue* JsonValue::getValueFromObject(const string& key) {
+  assert(type_ == RJSON_OBJECT);
+  assert(type_ == RJSON_OBJECT && obj_size_ != 0);
   assert(type_ == RJSON_OBJECT && obj_size_ != 0 && key.size() != 0);
   for (size_t i = 0; i < obj_size_; ++i) {
     if (*(pair_[i].str_) == key) {

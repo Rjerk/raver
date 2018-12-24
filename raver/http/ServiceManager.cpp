@@ -37,9 +37,9 @@ void ServiceManager::Init() {
     LOG_FATAL << "raver-config.json parse error";
   }
   
-  auto value = parser.getValue(); 
-  if (value->getType() == RJSON_OBJECT) {
-    LOG_FATAL << "config is invalid json object"; 
+  auto value = parser.getValue();
+  if (value->getType() != RJSON_OBJECT) {
+    LOG_FATAL << "config file has bad format, should be a JSON object"; 
   }
 
   thread_num_ = static_cast<uint16_t>(value->getValueFromObject("thread_num")->getNumber());

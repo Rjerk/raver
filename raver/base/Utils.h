@@ -35,11 +35,11 @@ int epoll_create(int size);
 int epoll_wait(int epfd, struct epoll_event* events, int maxevents,
                int timeout);
 
-std::string getFileExtension(const std::string& path);
+std::string GetFileExtension(const std::string& path);
 
-void getContentType(const std::string& extension, std::string& content_type);
+void GetContentType(const std::string& extension, std::string& content_type);
 
-std::string ReadFile(const std::string& filename);
+std::string ReadFile(std::string_view filename);
 }  // namespace utils
 
 #endif
