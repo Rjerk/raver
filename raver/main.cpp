@@ -1,30 +1,16 @@
-#include "./base/Logger.h"
-#include "./base/RJson.h"
-#include "./http/ServiceManager.h"
-#include "./http/HTTPService.h"
+#include <raver/base/Logger.h>
+#include <raver/http/ServiceManager.h>
+#include <raver/http/HTTPService.h>
 
 int main()
 {
     using namespace raver;
-    using namespace rjson;
 
     Logger::setLevel(Logger::LogLevel::Trace);
 
-    RJSON parser{readFile("../conf/raver-config.json")};
-    auto ret = parser.parseJson(); (void) ret;
-    assert(ret == PARSE_OK);
+    ServiceManager manager;
 
-    auto value = parser.getValue(); (void) value;
-    assert(value->getType() == RJSON_OBJECT);
-
-    // int thread_num = 10;
-    auto thread_num = static_cast<int>(value->getValueFromObject("thread_num")->getNumber());
-    auto port = static_cast<int>(value->getValueFromObject("port")->getNumber());
-    // int port = 8888;
-
-    ServiceManager manager(thread_num);
-
-    HTTPService http_service(&manager, port);
-
-    manager.run();
+    HTTPService http_service{&manager};
+    // FTPService ftp_service{&manager};
+    manager.Run();
 }

@@ -1,12 +1,13 @@
-#include "HTTPService.h"
-#include "../base/Logger.h"
-#include "../base/RJson.h"
-#include "Acceptor.h"
-#include "HTTPConnection.h"
-#include "HTTPRequest.h"
-#include "HTTPResponse.h"
-#include "IOManager.h"
-#include "ServiceManager.h"
+#include <raver/base/Logger.h>
+#include <raver/base/RJson.h>
+#include <raver/http/HTTPService.h>
+#include <raver/http/Acceptor.h>
+#include <raver/http/HTTPConnection.h>
+#include <raver/http/HTTPRequest.h>
+#include <raver/http/HTTPResponse.h>
+#include <raver/http/IOManager.h>
+#include <raver/http/ServiceManager.h>
+#include <raver/base/Utils.h>
 
 #include <sys/stat.h>
 #include <unistd.h>
@@ -48,7 +49,7 @@ void handleHTTPCallback(const HTTPRequest& request, HTTPResponse* resp) {
     post = true;
   }
 
-  rjson::RJSON parser(readFile("../conf/raver-config.json"));
+  rjson::RJSON parser(utils::ReadFile("../conf/raver-config.json"));
   parser.parseJson();
   // auto doc_root =
   // *(parser.getValue()->getValueFromObject("doc_root")->getString());
@@ -100,7 +101,7 @@ void handleHTTPCallback(const HTTPRequest& request, HTTPResponse* resp) {
     resp->setStatusMessage("OK");
     resp->setCloseConnection(true);
     // resp->setBody(std::string(buf->beginRead(), buf->size()));
-    resp->setBody(readFile(path.c_str()));
+    resp->setBody(utils::ReadFile(path.c_str()));
   }
 }
 
@@ -108,14 +109,14 @@ void handleHTTPCallback(const HTTPRequest& request, HTTPResponse* resp) {
 
 FileCache HTTPService::filecache_{50 << 20};
 
-HTTPService::HTTPService(ServiceManager* manager, int port)
-    : service_manager_(manager),
-      conns_(),
-      httpCallback_(detail::handleHTTPCallback) {
-  service_manager_->registerAcceptor(
-      port,
-      std::bind(&HTTPService::newConnection, this, std::placeholders::_1));
+HTTPService::HTTPService(ServiceManager* manager)
+    : service_manager_{manager}, conns_{}, httpCallback_{detail::handleHTTPCallback} {
+
   LOG_TRACE << "HTTPService ctor";
+  service_manager_->RegisterAcceptor(
+    service_manager_->GetHttpPort(),
+    std::bind(&HTTPService::newConnection, this, std::placeholders::_1)
+  );
 }
 
 HTTPService::~HTTPService() {
@@ -154,9 +155,10 @@ void HTTPService::onMessage(HTTPConnection& conn, Buffer* buffer) {
                      (request.getVersion() == HTTPRequest::Version::HTTP10 &&
                       connection != "keep-alive");
 
-    HTTPResponse response(close_req);
+    HTTPResponse response;
+    response.setCloseConnection(close_req);
 
-    service_manager_->ioManager()->addTask(
+    service_manager_->IoManager()->addTask(
         [&]() { httpCallback_(request, &response); });
 
     Buffer out_buf;

@@ -1,10 +1,11 @@
-#include "HTTPConnection.h"
-#include "../base/RJson.h"
-#include "../base/Utils.h"
-#include "Channel.h"
-#include "HTTPService.h"
-#include "IOManager.h"
-#include "ServiceManager.h"
+#include <raver/http/HTTPConnection.h>
+#include <raver/http/Channel.h>
+#include <raver/http/HTTPService.h>
+#include <raver/http/IOManager.h>
+#include <raver/http/ServiceManager.h>
+
+#include <raver/base/RJson.h>
+#include <raver/base/Utils.h>
 
 #include <strings.h>
 #include <sys/types.h>
@@ -13,17 +14,12 @@
 namespace raver {
 
 HTTPConnection::HTTPConnection(HTTPService* service, int connfd)
-    : service_(service),
-      state_(State::Connecting),
-      connfd_(connfd),
-      done_(false),
-      channel_(new Channel(service_->serviceManager()->ioManager(), connfd)),
-      input_buffer_(),
-      output_buffer_(),
-      request_(),
-      response_(false),
-      parser_() {
+    : service_{service},
+      connfd_{connfd},
+      state_{State::Connecting},
+      channel_{new Channel(service_->serviceManager()->IoManager(), connfd)} {
   LOG_TRACE << "HTTPConnection ctor. fd = " << connfd_;
+
   channel_->setReadCallback(std::bind(&HTTPConnection::handleRead, this));
   channel_->setWriteCallback(std::bind(&HTTPConnection::handleWrite, this));
   channel_->setErrorCallback(std::bind(&HTTPConnection::handleError, this));
@@ -38,7 +34,7 @@ HTTPConnection::HTTPConnection(HTTPService* service, int connfd)
 HTTPConnection::~HTTPConnection() {
   LOG_TRACE << "HTTPConnection dtor" << this;
   assert(state_ == State::Disconnected);
-  wrapper::close(connfd_);
+  utils::close(connfd_);
 }
 
 void HTTPConnection::handleRead() {
@@ -67,7 +63,7 @@ void HTTPConnection::handleWrite() {
 
   if (channel_->isWriting()) {
     ssize_t n;
-    if ((n = wrapper::write(channel_->fd(), output_buffer_.beginRead(),
+    if ((n = utils::write(channel_->fd(), output_buffer_.beginRead(),
                             output_buffer_.readableBytes())) > 0) {
       output_buffer_.retrieve(n);
       if (output_buffer_.readableBytes() == 0) {
@@ -115,7 +111,7 @@ void HTTPConnection::send(const char* data, size_t len) {
   ssize_t nwrote = 0;
   size_t remaining = len;
   if (!channel_->isWriting() && output_buffer_.readableBytes() == 0) {
-    nwrote = wrapper::write(channel_->fd(), data, len);
+    nwrote = utils::write(channel_->fd(), data, len);
     LOG_TRACE << "nwrote: " << nwrote;
     if (nwrote >= 0) {
       remaining = len - nwrote;

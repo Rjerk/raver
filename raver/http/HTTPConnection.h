@@ -3,11 +3,12 @@
 
 #include <functional>
 #include <memory>
-#include "../base/Buffer.h"
-#include "../base/noncopyable.h"
-#include "HTTPParser.h"
-#include "HTTPRequest.h"
-#include "HTTPResponse.h"
+
+#include <raver/base/Buffer.h>
+#include <raver/base/noncopyable.h>
+#include <raver/http/HTTPParser.h>
+#include <raver/http/HTTPRequest.h>
+#include <raver/http/HTTPResponse.h>
 
 namespace raver {
 
@@ -31,11 +32,15 @@ class HTTPConnection : noncopyable {
   void setConnectionCallback(const ConnectionCallback& cb) {
     connectionCallback_ = cb;
   }
-  void setMessageCallback(const MessageCallback& cb) { messageCallback_ = cb; }
+  void setMessageCallback(const MessageCallback& cb) {
+    messageCallback_ = cb;
+  }
   void setWriteCompleteCallback(const WriteCompleteCallback& cb) {
     writeCompleteCallback_ = cb;
   }
-  void setCloseCallback(const CloseCallback& cb) { closeCallback_ = cb; }
+  void setCloseCallback(const CloseCallback& cb) {
+    closeCallback_ = cb;
+  }
 
   bool connected() const { return state_ == State::Connected; }
 
@@ -64,12 +69,12 @@ class HTTPConnection : noncopyable {
   void close();
 
  private:
-  HTTPService* service_;  // not own it.
+  HTTPService* service_{nullptr};  // not own it.
 
-  State state_;
+  int connfd_{-1};
+  State state_{State::Disconnected};
+  bool done_{false};
 
-  int connfd_;
-  bool done_;
   std::unique_ptr<Channel> channel_;
 
   Buffer input_buffer_;

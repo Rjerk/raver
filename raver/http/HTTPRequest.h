@@ -11,7 +11,7 @@ class HTTPRequest {
   enum class Method { Invalid, Get, Post, Head, Put, Delete };
   enum class Version { Unknown, HTTP10, HTTP11 };
 
-  HTTPRequest();
+  HTTPRequest() = default;
 
   void clear();
 

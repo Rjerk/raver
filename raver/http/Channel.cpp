@@ -1,6 +1,6 @@
-#include "Channel.h"
-#include "../base/Logger.h"
-#include "IOManager.h"
+#include <raver/base/Logger.h>
+#include <raver/http/IOManager.h>
+#include <raver/http/Channel.h>
 //#include "../base/ThreadPool.h"
 
 #include <cassert>
@@ -8,12 +8,7 @@
 namespace raver {
 
 Channel::Channel(IOManager* iomanager, int fd)
-    : iomanager_(iomanager),
-      fd_(fd),
-      events_(0),
-      revents_(0),
-      index_(-1),
-      event_handling_(false) {
+    : iomanager_{iomanager}, fd_{fd} {
   LOG_TRACE << "Channel ctor";
 }
 
@@ -55,11 +50,13 @@ void Channel::handleEvent() {
 }
 
 void Channel::remove() {
-  LOG_TRACE << "remove channel.";
+  LOG_TRACE << "remove channel: " << this;
   assert(isNoneEvent());
   iomanager_->removeChannel(this);
 }
 
-void Channel::update() { iomanager_->updateChannel(this); }
+void Channel::update() {
+  iomanager_->updateChannel(this);
+}
 
 }  // namespace raver

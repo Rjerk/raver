@@ -1,6 +1,5 @@
-#include "HTTPParser.h"
-#include "../base/Buffer.h"
-#include "HTTPRequest.h"
+#include <raver/base/Buffer.h>
+#include <raver/http/HTTPParser.h>
 
 namespace raver {
 

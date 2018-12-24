@@ -1,6 +1,9 @@
 add_executable(base64_test Base64Test.cpp)
 target_link_libraries(base64_test raver_base)
 
+add_executable(threadpool_test ThreadPoolTest.cpp)
+target_link_libraries(threadpool_test raver_base)
+
 add_executable(buffer_test BufferTest.cpp)
 target_link_libraries(buffer_test raver_base)
 

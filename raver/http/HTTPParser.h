@@ -1,7 +1,7 @@
 #ifndef HTTP_PARSER_H
 #define HTTP_PARSER_H
 
-#include "HTTPRequest.h"
+#include <raver/http/HTTPRequest.h>
 
 namespace raver {
 

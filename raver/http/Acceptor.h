@@ -3,7 +3,7 @@
 
 #include <functional>
 #include <memory>
-#include "../base/noncopyable.h"
+#include <raver/base/noncopyable.h>
 
 namespace raver {
 
@@ -18,17 +18,19 @@ class Acceptor {
 
   ~Acceptor();
 
-  void listen();
+  void Listen();
 
  private:
-  void doAccept();
+  void DoAccept();
 
  private:
-  IOManager* iomanager_;  // not own it.
-  int listenfd_;
+  IOManager* iomanager_{nullptr};  // not own it.
+
+  AcceptorCallback acceptor_cb_;
+
+  int listenfd_{-1};
 
   std::unique_ptr<Channel> channel_;
-  AcceptorCallback acceptor_cb_;
 };
 
 }  // namespace raver

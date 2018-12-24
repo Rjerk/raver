@@ -7,7 +7,7 @@
 #include <cstring>
 #include "Logger.h"
 
-namespace wrapper {
+namespace utils {
 
 int socket(int domain, int type, int protocol) {
   int fd;
@@ -137,10 +137,6 @@ int epoll_wait(int epfd, struct epoll_event* events, int maxevents,
   return nfds;
 }
 
-}  // namespace wrapper
-
-namespace utils {
-
 std::string getFileExtension(const std::string& path) {
   size_t pos;
   if ((pos = path.find_last_of('.')) != std::string::npos) {
@@ -171,6 +167,13 @@ void getContentType(const std::string& extension, std::string& content_type) {
     }
   }
   content_type = "text/plain";
+}
+
+std::string ReadFile(const std::string& filename) {
+  std::ifstream t{filename};
+  std::stringstream buffer;
+  buffer << t.rdbuf();
+  return buffer.str();
 }
 
 }  // namespace utils

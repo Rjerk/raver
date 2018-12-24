@@ -1,16 +1,13 @@
-#include "HTTPResponse.h"
-#include "../base/Buffer.h"
+#include <raver/http/HTTPResponse.h>
+#include <raver/base/Buffer.h>
 
 #include <cstring>
 
 namespace raver {
 
-HTTPResponse::HTTPResponse(bool close)
-    : status_code_(Unknown), close_connection_(close) {}
-
 void HTTPResponse::appendToBuffer(Buffer* out) {
   char buf[32];
-  snprintf(buf, sizeof(buf), "HTTP/1.1 %d ", status_code_);
+  snprintf(buf, sizeof(buf), "HTTP/1.1 %u ", static_cast<unsigned>(status_code_));
   out->append(buf, strlen(buf));
   out->append(status_message_);
   out->append("\r\n", 2);

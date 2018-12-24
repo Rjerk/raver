@@ -12,13 +12,6 @@ using std::cout;
 using std::endl;
 using std::string;
 
-string readFile(const char* filename) {
-  std::ifstream t(string{filename});
-  std::stringstream buffer;
-  buffer << t.rdbuf();
-  return buffer.str();
-}
-
 namespace detail {
 
 bool isdigit_1to9(char ch) { return ch != '0' && isdigit(ch); }

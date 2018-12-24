@@ -1,10 +1,6 @@
-#include "HTTPRequest.h"
+#include <raver/http/HTTPRequest.h>
 
 namespace raver {
-
-HTTPRequest::HTTPRequest()
-
-    = default;
 
 void HTTPRequest::clear() {
   method_ = Method::Invalid;

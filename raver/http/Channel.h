@@ -3,7 +3,7 @@
 
 #include <sys/epoll.h>
 #include <functional>
-#include "../base/noncopyable.h"
+#include <raver/base/noncopyable.h>
 
 namespace raver {
 
@@ -73,13 +73,13 @@ class Channel : noncopyable {
   static const int kReadEvent = EPOLLIN | EPOLLPRI;
   static const int kWriteEvent = EPOLLOUT;
 
-  IOManager* iomanager_;
-  int fd_;
-  int events_;
-  int revents_;  // received event types of epoll.
-  int index_;    // used by epoller;
+  IOManager* iomanager_{nullptr};
+  int fd_{-1};
+  int events_{0};
+  int revents_{0};  // received event types of epoll.
+  int index_{-1};    // used by epoller;
 
-  bool event_handling_;
+  bool event_handling_{false};
 
   ReadEventCallback readcb_;
   EventCallback writecb_;

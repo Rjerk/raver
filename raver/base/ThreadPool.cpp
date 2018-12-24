@@ -5,13 +5,11 @@
 
 namespace raver {
 
-ThreadPool::ThreadPool() : ThreadPool(std::thread::hardware_concurrency()) {}
-
 ThreadPool::ThreadPool(size_t num_thread)
-    : size_(num_thread), quit_(false), mtx_() {
+    : size_{num_thread} {
   threads_.reserve(size_);
   for (size_t i = 0; i < size_; ++i) {
-    threads_.emplace_back(&ThreadPool::worker, this);
+    threads_.emplace_back(&ThreadPool::Worker, this);
   }
   LOG_TRACE << "ThreadPool ctor";
 }
@@ -35,12 +33,12 @@ void ThreadPool::stop() {
   }
 }
 
-size_t ThreadPool::taskNum() const {
+size_t ThreadPool::TaskNum() const {
   MutexGuard guard(mtx_);
   return tasks_.size();
 }
 
-void ThreadPool::worker() {
+void ThreadPool::Worker() {
   while (true) {
     TaskType task;
     {

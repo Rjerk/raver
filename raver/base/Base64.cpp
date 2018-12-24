@@ -1,12 +1,13 @@
-#include "Base64.h"
+#include <raver/base/Base64.h>
+#include <raver/base/Logger.h>
 #include <bitset>
-#include "Logger.h"
 
 namespace raver {
 
 namespace detail {
 
 bool isBase64(unsigned char c) { return isalnum(c) || c == '+' || c == '/'; }
+
 static const char base64_digits[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 62, 0, 0, 0, 63, 52,
@@ -55,7 +56,7 @@ std::string base64Decode(const std::string& src) {
   }
 
   // 01100001 00111010 01100001 01100001
-  std::string result = std::string(binary_str, 0, origin_bit_len);
+  std::string result{std::string(binary_str, 0, origin_bit_len)};
 
   std::string dst;
   for (size_t i = 0; i < origin_bit_len / 8; ++i) {

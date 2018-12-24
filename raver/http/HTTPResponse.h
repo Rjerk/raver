@@ -10,8 +10,8 @@ class Buffer;
 
 class HTTPResponse {
  public:
-  enum HTTPStatusCode {
-    Unknown,
+  enum class HTTPStatusCode : unsigned {
+    Unknown = 0,
     OK200 = 200,
     MovedPermanently301 = 301,
     BadRequest400 = 400,
@@ -19,15 +19,19 @@ class HTTPResponse {
     NotImp501 = 501,
   };
 
-  explicit HTTPResponse(bool close);
+  HTTPResponse() = default;
 
-  void setStatusCode(HTTPStatusCode code) { status_code_ = code; }
+  void setStatusCode(HTTPStatusCode code) {
+    status_code_ = code;
+  }
 
   void setStatusMessage(const std::string& message) {
     status_message_ = message;
   }
 
-  void setCloseConnection(bool on) { close_connection_ = on; }
+  void setCloseConnection(bool on) {
+    close_connection_ = on;
+  }
 
   void setContentType(const std::string& content_type) {
     addHeader("Content-Type", content_type);
@@ -37,18 +41,24 @@ class HTTPResponse {
     headers_[key] = value;
   }
 
-  void setBody(const std::string& body) { body_ = body; }
+  void setBody(const std::string& body) {
+    body_ = body;
+  }
 
-  void setBody(std::string&& body) { body_ = std::move(body); }
+  void setBody(std::string&& body) {
+    body_ = std::move(body);
+  }
 
   void appendToBuffer(Buffer* out);
 
-  bool closeConnection() const { return close_connection_; }
+  bool closeConnection() const {
+    return close_connection_;
+  }
 
  private:
-  HTTPStatusCode status_code_;
+  HTTPStatusCode status_code_{HTTPStatusCode::Unknown};
+  bool close_connection_{false};
   std::string status_message_;
-  bool close_connection_;
 
   using HeaderMap = std::unordered_map<std::string, std::string>;
   HeaderMap headers_;

@@ -4,7 +4,9 @@
 #include <functional>
 #include <memory>
 #include <vector>
-#include "../base/noncopyable.h"
+#include <raver/base/noncopyable.h>
+#include <raver/http/IOManager.h>
+#include <raver/http/Acceptor.h>
 
 namespace raver {
 
@@ -15,22 +17,28 @@ class ServiceManager : noncopyable {
  public:
   using AcceptorCallback = std::function<void(int)>;
 
-  explicit ServiceManager(int thread_num);
+  explicit ServiceManager();
 
-  ~ServiceManager();
+  void Init();
 
-  void run();
+  void Run();
 
-  void registerAcceptor(int port, const AcceptorCallback& acceptor_cb);
+  void RegisterAcceptor(int port, const AcceptorCallback& acceptor_cb);
 
-  IOManager* ioManager() const { return iomanager_.get(); }
+  IOManager* IoManager() const { return iomanager_.get(); }
+
+  auto GetHttpPort() const { return http_port_; }
 
  private:
+  std::unique_ptr<Acceptor> acceptor_;
   std::unique_ptr<IOManager> iomanager_;
 
+  // config
+  uint16_t http_port_;
+  uint16_t thread_num_;
+  
   // using Acceptors = std::vector<Acceptor*>;
   // Acceptors acceptors_;
-  std::unique_ptr<Acceptor> acceptor_;
 };
 
 }  // namespace raver

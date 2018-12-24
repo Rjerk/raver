@@ -1,12 +1,13 @@
-#include "EPoller.h"
 #include <sys/epoll.h>
 #include <unistd.h>
 #include <cassert>
 #include <cstring>
 #include <vector>
-#include "../base/Logger.h"
-#include "../base/Utils.h"
-#include "Channel.h"
+
+#include <raver/base/Logger.h>
+#include <raver/base/Utils.h>
+#include <raver/http/EPoller.h>
+#include <raver/http/Channel.h>
 
 namespace raver {
 
@@ -19,10 +20,9 @@ const int kDeleted = 2;
 }  // namespace
 
 EPoller::EPoller(IOManager* iomanager)
-    : iomanager_(iomanager),
-      epollfd_(::epoll_create1(EPOLL_CLOEXEC)),
-      events_(kInitEventListSize),
-      channels_() {
+    : iomanager_{iomanager},
+      epollfd_{::epoll_create1(EPOLL_CLOEXEC)},
+      events_(kInitEventListSize) {
   if (epollfd_ < 0) {
     LOG_SYSFATAL << "epoll_create1 error ";
   }
@@ -33,8 +33,6 @@ EPoller::~EPoller() {
   LOG_TRACE << "Poller dtor";
   ::close(epollfd_);
 }
-
-int EPoller::fd() const { return epollfd_; }
 
 void EPoller::poll(ChannelList* active_channels) {
   int num_events;
@@ -48,7 +46,7 @@ void EPoller::poll(ChannelList* active_channels) {
       events_.resize(events_.size() * 2);
     }
   } else if (num_events == 0) {
-    // LOG_TRACE << "nothing happended.";
+    LOG_TRACE << "nothing happended.";
     return;
   } else if (num_events < 0) {
     if (errno != EINTR) {
@@ -74,8 +72,7 @@ void EPoller::updateChannel(Channel* channel) {
 
   LOG_TRACE << "index = " << index << " fd = " << channel->fd();
 
-  int fd = channel->fd();
-  if (index == kNew || index == kDeleted) {
+  if (int fd = channel->fd(); index == kNew || index == kDeleted) {
     if (index == kNew) {
       assert(channels_.find(fd) == channels_.end());
       channels_[fd] = channel;
@@ -108,8 +105,7 @@ void EPoller::removeChannel(Channel* channel) {
   int index = channel->index();
   assert(index == kAdded || index == kDeleted);
 
-  size_t n = channels_.erase(fd);
-  (void)n;
+  [[ maybe_unused ]] size_t n = channels_.erase(fd);
   assert(n == 1);
 
   if (index == kAdded) {

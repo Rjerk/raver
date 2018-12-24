@@ -1,8 +1,8 @@
-#include "Acceptor.h"
-#include "../base/Logger.h"
-#include "../base/Utils.h"
-#include "Channel.h"
-#include "IOManager.h"
+#include <raver/base/Logger.h>
+#include <raver/base/Utils.h>
+#include <raver/http/Channel.h>
+#include <raver/http/IOManager.h>
+#include <raver/http/Acceptor.h>
 
 #include <cstring>
 #include <memory>
@@ -12,15 +12,13 @@ namespace raver {
 
 Acceptor::Acceptor(IOManager* iomanager, uint16_t port,
                    AcceptorCallback acceptor_cb)
-    : iomanager_(iomanager),
-      listenfd_(-1),
-      channel_(),
-      acceptor_cb_(std::move(acceptor_cb)) {
+    : iomanager_{iomanager},
+      acceptor_cb_{std::move(acceptor_cb)} {
   LOG_TRACE << "Acceptor ctor";
 
-  listenfd_ = wrapper::socket(AF_INET, SOCK_STREAM, 0);
+  listenfd_ = utils::socket(AF_INET, SOCK_STREAM, 0);
 
-  wrapper::setNonBlockAndCloseOnExec(listenfd_);
+  utils::setNonBlockAndCloseOnExec(listenfd_);
 
   struct sockaddr_in serv_addr;
   ::bzero(&serv_addr, sizeof(serv_addr));
@@ -32,12 +30,12 @@ Acceptor::Acceptor(IOManager* iomanager, uint16_t port,
   ::setsockopt(listenfd_, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
   ::setsockopt(listenfd_, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
 
-  wrapper::bindOrDie(listenfd_, reinterpret_cast<struct sockaddr*>(&serv_addr));
+  utils::bindOrDie(listenfd_, reinterpret_cast<struct sockaddr*>(&serv_addr));
 
   channel_ = std::make_unique<Channel>(iomanager_, listenfd_);
-  channel_->setReadCallback(std::bind(&Acceptor::doAccept, this));
+  channel_->setReadCallback(std::bind(&Acceptor::DoAccept, this));
 
-  wrapper::listenOrDie(listenfd_);
+  utils::listenOrDie(listenfd_);
 
   channel_->enableReading();
 }
@@ -46,10 +44,10 @@ Acceptor::~Acceptor() {
   LOG_TRACE << "Acceptor dtor";
   channel_->disableAll();
   channel_->remove();
-  wrapper::close(listenfd_);
+  utils::close(listenfd_);
 }
 
-void Acceptor::doAccept() {
+void Acceptor::DoAccept() {
   LOG_TRACE << "start accept, listenfd: " << listenfd_;
   for (;;) {
     struct sockaddr_in clnt_addr;
@@ -94,7 +92,7 @@ void Acceptor::doAccept() {
         LOG_TRACE << "got a new connection.";
         acceptor_cb_(connfd);  // HTTPService::newConnection(int connfd)
       } else {
-        wrapper::close(connfd);
+        utils::close(connfd);
       }
       return;
     }

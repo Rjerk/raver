@@ -11,7 +11,7 @@ void threadMonitor(const ThreadPool& pool, int secs)
     for (int i = 0; i < secs; ++i) {
         {
             MutexGuard guard(mtx);
-            LOG_INFO << "size: " << pool.taskNum();
+            LOG_INFO << "size: " << pool.TaskNum();
         }
         std::this_thread::sleep_for(std::chrono::seconds(1)); // wait 1 s.
     }

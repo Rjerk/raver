@@ -8,7 +8,7 @@
 #include <sstream>
 #include <string>
 
-namespace wrapper {
+namespace utils {
 
 int socket(int domain, int type, int protocol);
 
@@ -35,14 +35,11 @@ int epoll_create(int size);
 int epoll_wait(int epfd, struct epoll_event* events, int maxevents,
                int timeout);
 
-}  // namespace wrapper
-
-namespace utils {
-
 std::string getFileExtension(const std::string& path);
 
 void getContentType(const std::string& extension, std::string& content_type);
 
+std::string ReadFile(const std::string& filename);
 }  // namespace utils
 
 #endif

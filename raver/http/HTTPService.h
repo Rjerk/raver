@@ -3,8 +3,8 @@
 
 #include <functional>
 #include <vector>
-#include "../base/FileCache.h"
-#include "../base/noncopyable.h"
+#include <raver/base/FileCache.h>
+#include <raver/base/noncopyable.h>
 
 namespace raver {
 
@@ -16,7 +16,7 @@ class HTTPResponse;
 
 class HTTPService : noncopyable {
  public:
-  HTTPService(ServiceManager* manager, int port);
+  explicit HTTPService(ServiceManager* manager);
 
   ~HTTPService();
 
